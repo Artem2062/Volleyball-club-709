@@ -266,7 +266,9 @@ const DataManager = {
             { name: "Шамсиддинов Давид", photo: "images/Шамсиддинов Давид.png" },
             { name: "Щедров Даниил", photo: "images/Щедров Даниил.png" },
             { name: "Щедров Макар", photo: "images/Щедров Макар.png" },
-            { name: "Якубовский Кирилл", photo: "images/Якубовский Кирилл.png" }
+            { name: "Якубовский Кирилл", photo: "images/Якубовский Кирилл.png" },
+            { name: "Канищев Евгений", photo: "images/Канищев Евгений.png" },
+            { name: "Мартынцев Даниил", photo: "images/Мартынцев Даниил.png" }
         ];
 
         for (const player of defaultPlayers) {
