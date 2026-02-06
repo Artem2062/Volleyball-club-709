@@ -1371,8 +1371,6 @@ function loadSavedScores(matchId) {
         }
     }
 }
-
-// Запуск приложения
 document.addEventListener('DOMContentLoaded', initApp);
 // =========== АДАПТИВНЫЙ ХЕДЕР С АНИМАЦИЕЙ ПРИ СКРОЛЛЕ ===========
 

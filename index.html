@@ -255,27 +255,20 @@
 
     <!-- Футер -->
     <footer class="footer">
-        <div class="footer-content">
-            <div class="footer-logo">
-                <div class="footer-logo-circle">
-                    <span>709</span>
-                </div>
-                <div class="footer-logo-text">
-                    <div class="footer-main-logo">Волейбольный клуб школы 709</div>
-                    <div class="footer-school-info">ГБОУ Школа №709 г. Москвы</div>
-                </div>
-            </div>
-            <div class="footer-links">
-                <a href="#home" onclick="showSection('home'); return false;">Главная</a>
-                <a href="#players" onclick="showSection('players'); return false;">Игроки</a>
-                <a href="#matches" onclick="showSection('matches'); return false;">Матчи</a>
-                <a href="#auth" onclick="showSection('auth'); return false;">Вход</a>
-            </div>
-            <div class="copyright">
-                © 2026 Волейбольный клуб ГБОУ Школы №709 г. Москвы. Все права защищены.
-            </div>
+    <div class="footer-content">
+        <div class="logo">Волейбольный клуб школы 709</div>
+        <div class="footer-links">
+            <a href="#home" onclick="showSection('home'); return false;">Главная</a>
+            <a href="#players" onclick="showSection('players'); return false;">Игроки</a>
+            <a href="#matches" onclick="showSection('matches'); return false;">Матчи</a>
+            <a href="#auth" onclick="showSection('auth'); return false;">Вход</a>
+            <a href="#admin" data-section="admin" onclick="showSection('admin'); return false;">Администраторам</a>
         </div>
-    </footer>
+        <div class="copyright">
+            © 2026 Волейбольный клуб школы 709. Все права защищены.
+        </div>
+    </div>
+</footer>
 
     <!-- Инициализация Firebase -->
     <script>
