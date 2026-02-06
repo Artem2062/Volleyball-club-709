@@ -82,6 +82,7 @@ body {
     border-radius: 20px;
     backdrop-filter: blur(10px);
     max-width: 800px;
+    width: 60%;
     border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
@@ -1080,4 +1081,443 @@ body {
 
 .about-card, .coach-card, .news-card, .player-card, .match-card {
     animation: fadeInUp 0.6s ease forwards;
+}
+/* =========== АДАПТИВНЫЙ ХЕДЕР С АНИМАЦИЕЙ =========== */
+
+/* Компактный хедер с фиксированной высотой */
+.header {
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    color: white;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: fixed; /* Изменено на fixed */
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.2);
+    height: 70px; /* Фиксированная высота */
+    transition: transform 0.3s ease, height 0.3s ease, padding 0.3s ease;
+}
+
+/* Хедер в компактном режиме */
+.header.compact {
+    height: 60px;
+    padding: 8px 20px;
+    box-shadow: 0 3px 15px rgba(0, 0, 0, 0.25);
+}
+
+/* Хедер скрыт */
+.header.hidden {
+    transform: translateY(-100%);
+}
+
+/* Логотип */
+.logo {
+    font-size: 1.3rem; /* Уменьшен размер */
+    font-weight: bold;
+    color: #ffffff;
+    transition: all 0.3s ease;
+}
+
+.header.compact .logo {
+    font-size: 1.1rem;
+}
+
+/* Навигация */
+.header nav {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    transition: all 0.3s ease;
+}
+
+.header.compact nav {
+    gap: 10px;
+}
+
+.header nav a {
+    color: white;
+    text-decoration: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    font-size: 0.95rem;
+}
+
+.header.compact nav a {
+    padding: 6px 12px;
+    font-size: 0.9rem;
+}
+
+.header nav a:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+/* Кнопка гамбургер-меню для мобильных */
+.menu-toggle {
+    display: none;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 30px;
+    height: 24px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    z-index: 1001;
+}
+
+.menu-toggle span {
+    width: 100%;
+    height: 3px;
+    background: white;
+    border-radius: 2px;
+    transition: all 0.3s ease;
+}
+
+.menu-toggle.active span:nth-child(1) {
+    transform: rotate(45deg) translate(6px, 6px);
+}
+
+.menu-toggle.active span:nth-child(2) {
+    opacity: 0;
+}
+
+.menu-toggle.active span:nth-child(3) {
+    transform: rotate(-45deg) translate(6px, -6px);
+}
+
+/* Добавляем отступ для основного контента */
+body {
+    padding-top: 70px; /* Соответствует высоте хедера */
+}
+
+/* =========== МОБИЛЬНАЯ ВЕРСИЯ =========== */
+@media (max-width: 768px) {
+    .header {
+        padding: 8px 15px;
+        height: 60px;
+    }
+    
+    .header.compact {
+        height: 50px;
+        padding: 6px 15px;
+    }
+    
+    .logo {
+        font-size: 1.1rem;
+    }
+    
+    .header.compact .logo {
+        font-size: 1rem;
+    }
+    
+    /* Скрываем обычное меню на мобильных */
+    .header nav {
+        position: fixed;
+        top: 60px;
+        left: 0;
+        width: 100%;
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        flex-direction: column;
+        padding: 20px;
+        gap: 15px;
+        transform: translateY(-100%);
+        opacity: 0;
+        visibility: hidden;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        border-top: 2px solid #ffd700;
+        z-index: 999;
+        transition: transform 0.3s ease, opacity 0.3s ease, visibility 0.3s ease;
+    }
+    
+    .header nav.active {
+        transform: translateY(0);
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    .header nav a {
+        padding: 12px 20px;
+        font-size: 1rem;
+        text-align: center;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        margin: 0;
+    }
+    
+    .header.compact nav {
+        top: 50px;
+    }
+    
+    .menu-toggle {
+        display: flex;
+    }
+    
+    /* Скрываем информацию о пользователе на мобильных */
+    #user-info {
+        display: none !important;
+    }
+    
+    /* Обновляем отступ для контента */
+    body {
+        padding-top: 60px;
+    }
+    
+    /* Герой-секция для мобильных */
+    .hero-section {
+        height: 70vh;
+        min-height: 500px;
+    }
+    
+    .hero-overlay {
+        width: 90%;
+        padding: 25px;
+    }
+    
+    .hero-title {
+        font-size: 2.2rem;
+        margin-bottom: 15px;
+    }
+    
+    .school-number {
+        font-size: 2.8rem;
+    }
+    
+    .hero-subtitle {
+        font-size: 1.1rem;
+        margin-bottom: 25px;
+    }
+    
+    .hero-cta {
+        gap: 15px;
+    }
+    
+    .btn-hero, .btn-hero-outline {
+        padding: 12px 25px;
+        font-size: 1rem;
+    }
+    
+    /* Карточки тренеров для мобильных */
+    .coach-card {
+        flex-direction: column;
+        text-align: center;
+        gap: 20px;
+        padding: 20px;
+    }
+    
+    .coach-photo {
+        width: 120px;
+        height: 120px;
+        min-width: 120px;
+    }
+    
+    /* Сетка игроков для мобильных */
+    .players-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 20px;
+    }
+    
+    .player-photo {
+        height: 180px;
+    }
+    
+    /* Секция матчей для мобильных */
+    .match-table-container {
+        margin: 15px -15px;
+        border-radius: 0;
+    }
+    
+    .match-results-table {
+        font-size: 0.85rem;
+    }
+    
+    .match-results-table th,
+    .match-results-table td {
+        padding: 8px;
+    }
+}
+
+@media (max-width: 480px) {
+    .header {
+        padding: 6px 12px;
+        height: 55px;
+    }
+    
+    .header.compact {
+        height: 45px;
+        padding: 4px 12px;
+    }
+    
+    .logo {
+        font-size: 1rem;
+    }
+    
+    .header.compact .logo {
+        font-size: 0.9rem;
+    }
+    
+    .header nav {
+        top: 55px;
+        padding: 15px;
+    }
+    
+    .header.compact nav {
+        top: 45px;
+    }
+    
+    .menu-toggle {
+        width: 26px;
+        height: 21px;
+    }
+    
+    body {
+        padding-top: 55px;
+    }
+    
+    .hero-section {
+        height: 65vh;
+        min-height: 450px;
+    }
+    
+    .hero-title {
+        font-size: 1.8rem;
+    }
+    
+    .school-number {
+        font-size: 2.3rem;
+    }
+    
+    .hero-subtitle {
+        font-size: 1rem;
+    }
+    
+    .hero-cta {
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .btn-hero, .btn-hero-outline {
+        width: 100%;
+        max-width: 250px;
+        margin: 0 auto;
+    }
+    
+    /* Карточки тренеров для очень маленьких экранов */
+    .coaches-grid {
+        grid-template-columns: 1fr;
+        gap: 25px;
+    }
+    
+    /* Сетка игроков для очень маленьких экранов */
+    .players-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+    }
+    
+    .player-photo {
+        height: 160px;
+    }
+    
+    /* Улучшение отображения таблицы матчей */
+    .team-player-display {
+        flex-direction: column;
+        text-align: center;
+        gap: 8px;
+        padding: 10px;
+    }
+    
+    .team-player-display img {
+        width: 35px;
+        height: 35px;
+    }
+    
+    .score-cell {
+        font-size: 1rem;
+    }
+}
+
+/* =========== ОБНОВЛЕННЫЕ СТИЛИ ДЛЯ МАТЧЕЙ =========== */
+@media (max-width: 768px) {
+    .match-results-table {
+        min-width: 500px; /* Для горизонтальной прокрутки на маленьких экранах */
+    }
+    
+    .team-thumbnail img {
+        width: 28px;
+        height: 28px;
+    }
+    
+    .team-player-display span {
+        font-size: 0.8rem;
+    }
+}
+
+/* =========== АДАПТИВНОСТЬ ДЛЯ ДЕСКТОПА =========== */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .header nav a {
+        padding: 6px 12px;
+        font-size: 0.9rem;
+    }
+    
+    .logo {
+        font-size: 1.2rem;
+    }
+    
+    .hero-overlay {
+        width: 80%;
+        padding: 30px;
+    }
+    
+    .hero-title {
+        font-size: 2.8rem;
+    }
+    
+    .school-number {
+        font-size: 3.2rem;
+    }
+}
+
+/* =========== ПОДДЕРЖКА ТЕМНОЙ ТЕМЫ =========== */
+@media (prefers-color-scheme: dark) {
+    .header {
+        background: linear-gradient(135deg, #0d193b 0%, #1a2f5c 100%);
+    }
+    
+}
+
+/* =========== ОБНОВЛЕННЫЕ АНИМАЦИИ =========== */
+@keyframes slideInDown {
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutUp {
+    from {
+        transform: translateY(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+}
+
+.header:not(.hidden) {
+    animation: slideInDown 0.3s ease;
+}
+
+.header.hidden {
+    animation: slideOutUp 0.3s ease;
 }
