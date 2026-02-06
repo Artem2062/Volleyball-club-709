@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Волейбольный клуб школы 709</title>
+    <link rel="stylesheet" href="styles.css" />
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+</head>
+
+<body>
+    <header class="header">
+        <div class="logo">Волейбольный клуб школы 709</div>
+        <nav>
+            <a href="#home" data-section="home" onclick="showSection('home'); return false;">Главная</a>
+            <a href="#players" data-section="players" onclick="showSection('players'); return false;">Игроки</a>
+            <a href="#matches" data-section="matches" onclick="showSection('matches'); return false;">Матчи</a>
+            <a href="#auth" data-section="auth" onclick="showSection('auth'); return false;">Вход / Регистрация</a>
+            <span id="admin-nav" style="display:none;">
+                <a href="#admin" data-section="admin" onclick="showSection('admin'); return false;">Админка</a>
+            </span>
+        </nav>
+        <div id="user-info" style="display:none; margin-left:auto; color:white;">
+            <span id="current-username"></span>
+            <button onclick="logout()" style="margin-left:10px; padding:5px 10px;">Выйти</button>
+        </div>
+    </header>
+
+    <!-- Главная -->
+    <section id="section-home" style="display: block;">
+        <!-- Герой-секция -->
+        <section class="hero-section">
+            <div class="hero-overlay">
+                <h1 class="hero-title">ВОЛЕЙБОЛЬНЫЙ КЛУБ <span class="school-number">709</span></h1>
+                <p class="hero-subtitle">Официальная спортивная команда школы №709 г. Москвы</p>
+                <div class="hero-cta">
+                    <a href="#players" class="btn-hero-outline" onclick="showSection('players'); return false;">Наши игроки</a>
+                    <a href="#matches" class="btn-hero-outline"
+                        onclick="showSection('matches'); return false;">Матчи</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- О клубе -->
+        <section class="about-section">
+            <div class="container">
+                <h2 class="section-title">О нашем клубе</h2>
+                <div class="about-grid">
+                    <div class="about-card">
+                        <div class="about-icon">🏐</div>
+                        <h3>Наша миссия</h3>
+                        <p>Развитие волейбола среди учащихся школы 709, воспитание спортивного духа, дисциплины и
+                            командной работы. Мы стремимся не только к победам на площадке, но и к формированию сильных
+                            характеров.</p>
+                    </div>
+                    <div class="about-card">
+                        <div class="about-icon">👥</div>
+                        <h3>Командный дух</h3>
+                        <p>Наш клуб объединяет более 20 талантливых игроков разного возраста. Мы верим, что успех
+                            команды зависит от каждого игрока, его преданности и готовности работать на общий результат.
+                        </p>
+                    </div>
+                    <div class="about-card">
+                        <div class="about-icon">🏆</div>
+                        <h3>Достижения</h3>
+                        <p>Неоднократные победители школьной волейбольной лиги Москвы, участники городских турниров и
+                            спортивных фестивалей. Мы гордимся каждым достижением наших спортсменов.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Тренерский состав -->
+        <section class="coaches-section">
+            <div class="container">
+                <h2 class="section-title">Тренерский состав</h2>
+                <div class="coaches-grid">
+                    <div class="coach-card">
+                        <div class="coach-photo">
+                            <img src="images/coach.png" alt="Тренер"
+                                style="width: 100%; height: 100%; object-fit: cover; object-position: top center;"
+                                onerror="this.src='images/default-player.png'">
+                        </div>
+                        <div class="coach-info">
+                            <h3>Базаев Владимир Александрович</h3>
+                            <p class="coach-role">Главный тренер</p>
+                        </div>
+                    </div>
+                    <div class="coach-card">
+                        <div class="coach-photo">
+                            <img src="images/coach2.png" alt="Тренер"
+                                style="width: 100%; height: 100%; object-fit: cover; object-position: top center;"
+                                onerror="this.src='images/default-player.png'">
+                        </div>
+                        <div class="coach-info">
+                            <h3>Вербкин Алексей Валерьевич</h3>
+                            <p class="coach-role">Учитель физкультуры</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Последние новости -->
+        <section class="news-section">
+            <div class="container">
+                <h2 class="section-title">Последние новости</h2>
+                <div class="news-grid">
+                    <article class="news-card">
+                        <div class="news-date">15.03.2024</div>
+                        <h3>Победа в турнире "Школьная лига"</h3>
+                        <p>Наша команда заняла первое место в окружном турнире по волейболу среди школ СВАО. Поздравляем
+                            игроков с блестящей победой!</p>
+                        <a href="#" class="news-link">Подробнее →</a>
+                    </article>
+                    <article class="news-card">
+                        <div class="news-date">10.03.2024</div>
+                        <h3>Открыта запись в секцию</h3>
+                        <p>Объявляем набор учащихся 5-11 классов в волейбольную секцию. Тренировки проходят три раза в
+                            неделю в школьном спортзале.</p>
+                        <a href="#" class="news-link">Подробнее →</a>
+                    </article>
+                    <article class="news-card">
+                        <div class="news-date">05.03.2024</div>
+                        <h3>Мастер-класс от профессионалов</h3>
+                        <p>Приглашаем всех желающих на открытый мастер-класс от игроков профессиональной волейбольной
+                            команды.</p>
+                        <a href="#" class="news-link">Подробнее →</a>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <!-- Расписание тренировок -->
+        <section class="schedule-section">
+            <div class="container">
+                <h2 class="section-title">Расписание тренировок</h2>
+                <div class="schedule-table">
+                    <div class="schedule-row">
+                        <div class="schedule-day">Вторник</div>
+                        <div class="schedule-time">15:30 - 18:00</div>
+                        <div class="schedule-group">Младшая группа</div>
+                        <div class="schedule-location">Спортзал №1</div>
+                    </div>
+                    <div class="schedule-row">
+                        <div class="schedule-day">Вторник</div>
+                        <div class="schedule-time">18:00 - 20:00</div>
+                        <div class="schedule-group">Старшая группа</div>
+                        <div class="schedule-location">Спортзал №1</div>
+                    </div>
+                    <div class="schedule-row">
+                        <div class="schedule-day">Четверг</div>
+                        <div class="schedule-time">15:30 - 18:00</div>
+                        <div class="schedule-group">Младшая группа</div>
+                        <div class="schedule-location">Спортзал №1</div>
+                    </div>
+                    <div class="schedule-row">
+                        <div class="schedule-day">Четверг</div>
+                        <div class="schedule-time">18:00 - 20:00</div>
+                        <div class="schedule-group">Старшая группа</div>
+                        <div class="schedule-location">Спортзал №1</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Контакты -->
+        <section class="contacts-section">
+            <div class="container">
+                <h2 class="section-title">Контакты</h2>
+                <div class="contacts-grid">
+                    <div class="contact-info">
+                        <h3>Школа №709</h3>
+                        <p><strong>Адрес:</strong> г. Москва, ул. Примерная, д. 10</p>
+                        <p><strong>Телефон:</strong> +7 (495) 123-45-67</p>
+                        <p><strong>Email:</strong> volleyball@school709.ru</p>
+                        <p><strong>Тренер:</strong> Иванов С.П. +7 (916) 123-45-67</p>
+                    </div>
+                    <div class="map-placeholder">
+                        <div class="map-image">
+                            <div
+                                style="background: #1e3c72; color: white; height: 200px; display: flex; align-items: center; justify-content: center; border-radius: 8px; flex-direction: column;">
+                                <p style="margin: 0; font-size: 1.2rem; font-weight: bold;">Школа №709</p>
+                                <p style="margin: 10px 0 0 0; opacity: 0.9;">г. Москва</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </section>
+
+    <!-- Игроки -->
+    <section id="section-players" style="display:none;">
+        <div class="container">
+            <h2 class="section-title">Все игроки</h2>
+            <div id="players-list" class="players-grid"></div>
+        </div>
+    </section>
+
+    <!-- Матчи -->
+    <section id="section-matches" style="display:none;">
+        <div class="container">
+            <h2 class="section-title">Прошедшие матчи</h2>
+            <div id="matches-list"></div>
+        </div>
+    </section>
+
+    <!-- Вход/регистрация -->
+    <section id="section-auth" style="display:none;">
+        <div class="container">
+            <h2 class="section-title">Вход / Регистрация</h2>
+            <div id="auth-forms"
+                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px; margin-top: 40px;">
+                <div id="login-form" class="form">
+                    <h3>Войти</h3>
+                    <input type="text" id="login-username" placeholder="Логин" />
+                    <input type="password" id="login-password" placeholder="Пароль" />
+                    <button onclick="login()" class="btn-primary">Войти</button>
+                </div>
+                <div id="register-form" class="form">
+                    <h3>Регистрация</h3>
+                    <input type="text" id="reg-username" placeholder="Логин" />
+                    <input type="password" id="reg-password" placeholder="Пароль" />
+                    <button onclick="register()" class="btn-primary">Зарегистрироваться</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Админка -->
+    <section id="section-admin" style="display:none;">
+        <div class="container">
+            <h2 class="section-title">Администрирование</h2>
+            <div id="admin-content">
+                <div id="admin-login-area" style="display:block;">
+                    <p>Войдите как администратор для доступа к этой странице.</p>
+                </div>
+                <div id="admin-logged-in" style="display:none;">
+                    <div style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button onclick="showCreateTeam()" class="admin-btn">Создать команду</button>
+                        <button onclick="showCreateMatch()" class="admin-btn">Создать таблицу матча</button>
+                        <button onclick="showEditMatches()" class="admin-btn">Редактировать матчи</button>
+                        <button onclick="showAdminDashboard()" class="admin-btn">Панель управления</button>
+                    </div>
+                    <div id="admin-area"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Футер -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-logo">
+                <div class="footer-logo-circle">
+                    <span>709</span>
+                </div>
+                <div class="footer-logo-text">
+                    <div class="footer-main-logo">Волейбольный клуб школы 709</div>
+                    <div class="footer-school-info">ГБОУ Школа №709 г. Москвы</div>
+                </div>
+            </div>
+            <div class="footer-links">
+                <a href="#home" onclick="showSection('home'); return false;">Главная</a>
+                <a href="#players" onclick="showSection('players'); return false;">Игроки</a>
+                <a href="#matches" onclick="showSection('matches'); return false;">Матчи</a>
+                <a href="#auth" onclick="showSection('auth'); return false;">Вход</a>
+            </div>
+            <div class="copyright">
+                © 2026 Волейбольный клуб ГБОУ Школы №709 г. Москвы. Все права защищены.
+            </div>
+        </div>
+    </footer>
+
+    <!-- Инициализация Firebase -->
+    <script>
+        // Конфигурация Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyBBVVRRAfUImUY7xNU5P1_HYmqGrK5JKSo",
+            authDomain: "volleyball-club-709.firebaseapp.com",
+            projectId: "volleyball-club-709",
+            storageBucket: "volleyball-club-709.firebasestorage.app",
+            messagingSenderId: "295552333871",
+            appId: "1:295552333871:web:3da98ba1e8a7bff48f6eda",
+            measurementId: "G-E5TC6PDVG1"
+        };
+
+        // Инициализация Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        console.log('Firebase инициализирован');
+    </script>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
