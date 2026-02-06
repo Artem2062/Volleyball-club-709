@@ -14,20 +14,21 @@
 
 <body>
     <header class="header">
-    <nav>
-        <a href="#home" data-section="home" onclick="showSection('home'); return false;">Главная</a>
-        <a href="#players" data-section="players" onclick="showSection('players'); return false;">Игроки</a>
-        <a href="#matches" data-section="matches" onclick="showSection('matches'); return false;">Матчи</a>
-        <a href="#auth" data-section="auth" onclick="showSection('auth'); return false;">Вход / Регистрация</a>
-        <span id="admin-nav" style="display:none;">
-            <a href="#admin" data-section="admin" onclick="showSection('admin'); return false;">Админка</a>
-        </span>
-    </nav>
-    <div id="user-info" style="display:none; margin-left:auto; color:white;">
-        <span id="current-username"></span>
-        <button onclick="logout()" style="margin-left:10px; padding:5px 10px;">Выйти</button>
-    </div>
-</header>
+        <div class="logo">Волейбольный клуб школы 709</div>
+        <nav>
+            <a href="#home" data-section="home" onclick="showSection('home'); return false;">Главная</a>
+            <a href="#players" data-section="players" onclick="showSection('players'); return false;">Игроки</a>
+            <a href="#matches" data-section="matches" onclick="showSection('matches'); return false;">Матчи</a>
+            <a href="#auth" data-section="auth" onclick="showSection('auth'); return false;">Вход / Регистрация</a>
+            <span id="admin-nav" style="display:none;">
+                <a href="#admin" data-section="admin" onclick="showSection('admin'); return false;">Админка</a>
+            </span>
+        </nav>
+        <div id="user-info" style="display:none; margin-left:auto; color:white;">
+            <span id="current-username"></span>
+            <button onclick="logout()" style="margin-left:10px; padding:5px 10px;">Выйти</button>
+        </div>
+    </header>
 
     <!-- Главная -->
     <section id="section-home" style="display: block;">

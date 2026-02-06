@@ -1372,3 +1372,182 @@ function loadSavedScores(matchId) {
     }
 }
 document.addEventListener('DOMContentLoaded', initApp);
+// =========== АДАПТИВНЫЙ ХЕДЕР С АНИМАЦИЕЙ ПРИ СКРОЛЛЕ ===========
+
+let lastScrollTop = 0;
+const header = document.querySelector('.header');
+const menuToggle = document.querySelector('.menu-toggle');
+const nav = document.querySelector('.header nav');
+
+// Функция для обработки скролла
+function handleScroll() {
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    
+    if (scrollTop > 100) {
+        header.classList.add('compact');
+        
+        if (scrollTop > lastScrollTop && scrollTop > 200) {
+            // Скролл вниз - скрываем хедер
+            header.classList.add('hidden');
+        } else {
+            // Скролл вверх - показываем хедер
+            header.classList.remove('hidden');
+        }
+    } else {
+        // Вверху страницы - обычный вид
+        header.classList.remove('compact', 'hidden');
+    }
+    
+    lastScrollTop = scrollTop;
+}
+
+// Функция для переключения мобильного меню
+function toggleMobileMenu() {
+    if (menuToggle && nav) {
+        menuToggle.classList.toggle('active');
+        nav.classList.toggle('active');
+        document.body.style.overflow = nav.classList.contains('active') ? 'hidden' : '';
+    }
+}
+
+// Закрытие мобильного меню при клике на ссылку
+function closeMobileMenu() {
+    if (menuToggle && nav) {
+        menuToggle.classList.remove('active');
+        nav.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+}
+
+// Инициализация адаптивного хедера
+function initResponsiveHeader() {
+    // Обработчик скролла
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    
+    // Инициализируем начальное состояние
+    handleScroll();
+    
+    // Обработчик для гамбургер-меню
+    if (menuToggle) {
+        menuToggle.addEventListener('click', toggleMobileMenu);
+    }
+    
+    // Закрытие меню при клике на ссылку
+    document.querySelectorAll('.header nav a').forEach(link => {
+        link.addEventListener('click', closeMobileMenu);
+    });
+    
+    // Закрытие меню при клике вне его
+    document.addEventListener('click', function(event) {
+        if (nav && nav.classList.contains('active') && 
+            !nav.contains(event.target) && 
+            !menuToggle.contains(event.target)) {
+            closeMobileMenu();
+        }
+    });
+    
+    // Закрытие меню при изменении размера окна
+    window.addEventListener('resize', function() {
+        if (window.innerWidth > 768) {
+            closeMobileMenu();
+        }
+    });
+}
+
+// Обновите функцию initApp, чтобы вызвать инициализацию хедера
+// В существующей функции initApp добавьте вызов:
+// initResponsiveHeader();
+
+// Или замените вашу текущую функцию initApp на:
+async function initApp() {
+    console.log('Инициализация приложения...');
+    
+    // Проверяем Firebase
+    if (!DataManager.isInitialized()) {
+        console.error('Ошибка: Firebase не инициализирован');
+        return;
+    }
+    
+    try {
+        // Настраиваем слушатель аутентификации
+        setupAuthListener();
+        
+        // Инициализируем данные по умолчанию
+        await DataManager.initDefaultData();
+        
+        // Загружаем данные
+        await loadAllData();
+        
+        // Инициализируем навигацию
+        initNavigation();
+        
+        // Инициализируем адаптивный хедер
+        initResponsiveHeader();
+        
+        // Показываем домашнюю страницу
+        if (!window.location.hash || window.location.hash === '#home') {
+            showSection('home');
+        } else {
+            const sectionName = window.location.hash.substring(1);
+            if (['home', 'players', 'matches', 'auth', 'admin'].includes(sectionName)) {
+                showSection(sectionName);
+            } else {
+                showSection('home');
+            }
+        }
+        
+        console.log('Приложение инициализировано');
+    } catch (error) {
+        console.error('Ошибка инициализации:', error);
+    }
+}
+
+// Обновите функцию showSection для закрытия меню
+window.showSection = function (name) {
+    console.log('Переход на секцию:', name);
+    
+    try {
+        // Закрываем мобильное меню если открыто
+        closeMobileMenu();
+        
+        // Скрываем все секции
+        document.querySelectorAll('section').forEach(s => {
+            if (s.id.startsWith('section-')) {
+                s.style.display = 'none';
+            }
+        });
+        
+        // Показываем нужную секцию
+        const section = document.getElementById('section-' + name);
+        if (section) {
+            section.style.display = 'block';
+            // Обновляем URL
+            window.location.hash = name;
+            // Прокручиваем вверх
+            window.scrollTo(0, 0);
+        } else {
+            console.error('Секция не найдена:', 'section-' + name);
+        }
+
+        // Обработка специальных случаев
+        if (name === 'admin') {
+            const adminLoggedIn = document.getElementById('admin-logged-in');
+            const adminLoginArea = document.getElementById('admin-login-area');
+            
+            if (currentUser && isAdmin) {
+                adminLoggedIn.style.display = 'block';
+                adminLoginArea.style.display = 'none';
+                showAdminDashboard();
+            } else {
+                adminLoggedIn.style.display = 'none';
+                adminLoginArea.style.display = 'block';
+            }
+        } else if (name === 'matches') {
+            displayPastMatches();
+        } else if (name === 'players') {
+            displayAllPlayers();
+        }
+    } catch (error) {
+        console.error('Ошибка при переключении секции:', error);
+    }
+};
