@@ -1196,6 +1196,318 @@ body {
 body {
     padding-top: 70px; /* Соответствует высоте хедера */
 }
+/* =========== ДИРЕКТОР ШКОЛЫ =========== */
+.director-section {
+    padding: 80px 0;
+    background: white;
+}
+
+.director-card {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 40px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 20px;
+    padding: 40px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    border-left: 5px solid #ffd700;
+}
+
+.director-photo {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 20px;
+    overflow: hidden;
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 5px solid white;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+.director-placeholder {
+    font-size: 6rem;
+    font-weight: bold;
+    color: white;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.director-info {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.director-info h3 {
+    font-size: 2rem;
+    color: #1e3c72;
+    margin-bottom: 5px;
+}
+
+.director-role {
+    font-size: 1.1rem;
+    color: #ffd700;
+    font-weight: bold;
+    background: rgba(30, 60, 114, 0.1);
+    padding: 10px 15px;
+    border-radius: 8px;
+    display: inline-block;
+}
+
+.director-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+}
+
+.director-stat-item {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-value {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #1e3c72;
+}
+
+.stat-value.party {
+    color: #0047ab;
+    background: rgba(0, 71, 171, 0.1);
+    padding: 3px 8px;
+    border-radius: 5px;
+    display: inline-block;
+}
+
+.stat-value.status {
+    color: #28a745;
+    background: rgba(40, 167, 69, 0.1);
+    padding: 3px 8px;
+    border-radius: 5px;
+    display: inline-block;
+}
+
+.director-education {
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+}
+
+.director-education h4 {
+    color: #1e3c72;
+    margin-bottom: 10px;
+    font-size: 1.2rem;
+}
+
+.director-education p {
+    color: #666;
+    line-height: 1.6;
+}
+
+.director-election-stats {
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+}
+
+.director-election-stats h4 {
+    color: #1e3c72;
+    margin-bottom: 20px;
+    font-size: 1.2rem;
+}
+
+.election-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+}
+
+.election-stat {
+    text-align: center;
+}
+
+.stat-circle {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    font-weight: bold;
+    margin: 0 auto 10px;
+    border: 3px solid #ffd700;
+}
+
+.election-stat span {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.director-bio {
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+}
+
+.director-bio h4 {
+    color: #1e3c72;
+    margin-bottom: 15px;
+    font-size: 1.2rem;
+}
+
+.director-bio p {
+    color: #666;
+    line-height: 1.6;
+    margin-bottom: 10px;
+}
+
+.director-awards {
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+}
+
+.director-awards h4 {
+    color: #1e3c72;
+    margin-bottom: 15px;
+    font-size: 1.2rem;
+}
+
+.awards-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.award-badge {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    padding: 8px 15px;
+    border-radius: 25px;
+    font-size: 0.9rem;
+    color: #1e3c72;
+    border: 1px solid #ffd700;
+    transition: all 0.3s ease;
+}
+
+.award-badge:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+    background: linear-gradient(135deg, #e9ecef, #f8f9fa);
+}
+
+.director-social {
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+}
+
+.director-social h4 {
+    color: #1e3c72;
+    margin-bottom: 15px;
+    font-size: 1.2rem;
+}
+
+.social-links {
+    display: flex;
+    gap: 15px;
+}
+
+.social-link {
+    padding: 10px 20px;
+    border-radius: 8px;
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.social-link.vk {
+    background: #0077ff;
+}
+
+.social-link.ok {
+    background: #ee8208;
+}
+
+.social-link:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Адаптивность для директора */
+@media (max-width: 768px) {
+    .director-card {
+        grid-template-columns: 1fr;
+        padding: 30px;
+    }
+    
+    .director-photo {
+        width: 250px;
+        margin: 0 auto;
+    }
+    
+    .election-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .stat-circle {
+        width: 70px;
+        height: 70px;
+        font-size: 1.1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .director-info h3 {
+        font-size: 1.5rem;
+    }
+    
+    .director-role {
+        font-size: 0.9rem;
+    }
+    
+    .director-stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .awards-list {
+        flex-direction: column;
+    }
+    
+    .award-badge {
+        width: 100%;
+        text-align: center;
+    }
+    
+    .social-links {
+        flex-direction: column;
+    }
+    
+    .social-link {
+        text-align: center;
+    }
+}
 
 /* =========== МОБИЛЬНАЯ ВЕРСИЯ =========== */
 @media (max-width: 768px) {

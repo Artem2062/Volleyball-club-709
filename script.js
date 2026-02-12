@@ -1,4 +1,4 @@
-// Модуль для работы с Firebase
+// =========== МОДУЛЬ ДЛЯ РАБОТЫ С FIREBASE ===========
 const DataManager = {
     // Проверка инициализации
     isInitialized() {
@@ -61,12 +61,24 @@ const DataManager = {
 
     async saveTeam(teamName, players) {
         try {
-            await db.collection('teams').doc(teamName).set({
+            if (!Array.isArray(players)) {
+                throw new Error('Данные игроков должны быть массивом');
+            }
+            
+            const teamData = {
                 name: teamName,
-                players: players || [],
+                players: players.map(player => ({
+                    id: player.id || null,
+                    name: player.name,
+                    photo: player.photo || 'images/default-player.png'
+                })),
                 createdAt: new Date().toISOString(),
-                createdBy: currentUser
-            });
+                createdBy: currentUser,
+                playerCount: players.length
+            };
+            
+            await db.collection('teams').doc(teamName).set(teamData);
+            console.log(`Команда "${teamName}" сохранена, игроков: ${players.length}`);
         } catch (error) {
             console.error('Ошибка сохранения команды:', error);
             throw error;
@@ -80,6 +92,12 @@ const DataManager = {
             console.error('Ошибка удаления команды:', error);
             throw error;
         }
+    },
+
+    // =========== ТИПЫ МАТЧЕЙ ===========
+    MATCH_TYPES: {
+        POINTS: 'points',
+        CLASSIC: 'classic'
     },
 
     // =========== МАТЧИ ===========
@@ -101,21 +119,29 @@ const DataManager = {
 
     async saveMatch(match) {
         try {
+            const matchData = {
+                description: match.description,
+                matchType: match.matchType || this.MATCH_TYPES.CLASSIC,
+                teams: match.teams || [],
+                players: match.players || [],
+                participants: match.participants || [],
+                participantsType: match.participantsType || 'players',
+                scores: match.scores || {},
+                points: match.points || {},
+                sets: match.sets || 3,
+                status: match.status || 'active',
+                date: match.date || new Date().toLocaleString(),
+                timestamp: match.timestamp || Date.now(),
+                standings: match.standings || [],
+                updatedAt: new Date().toISOString()
+            };
+
             if (match.id) {
-                // Обновление существующего матча
-                await db.collection('matches').doc(match.id).update({
-                    description: match.description,
-                    teams: match.teams,
-                    scores: match.scores,
-                    status: match.status,
-                    updatedAt: new Date().toISOString()
-                });
+                await db.collection('matches').doc(match.id).update(matchData);
                 return match.id;
             } else {
-                // Создание нового матча
                 const docRef = await db.collection('matches').add({
-                    ...match,
-                    timestamp: Date.now(),
+                    ...matchData,
                     createdAt: new Date().toISOString(),
                     createdBy: currentUser
                 });
@@ -174,10 +200,8 @@ const DataManager = {
             const userCredential = await auth.signInWithEmailAndPassword(email, password);
             const user = userCredential.user;
             
-            // Получаем данные пользователя
             const userData = await this.getUser(user.uid);
             if (!userData) {
-                // Если пользователь есть в Auth, но нет в Firestore
                 await this.createUser(user.uid, {
                     email: email,
                     username: email.split('@')[0],
@@ -196,11 +220,9 @@ const DataManager = {
 
     async register(email, password, username) {
         try {
-            // Создаем пользователя в Authentication
             const userCredential = await auth.createUserWithEmailAndPassword(email, password);
             const user = userCredential.user;
             
-            // Сохраняем в Firestore
             await this.createUser(user.uid, {
                 email: email,
                 username: username,
@@ -231,7 +253,6 @@ const DataManager = {
     // =========== ИНИЦИАЛИЗАЦИЯ ДАННЫХ ===========
     async initDefaultData() {
         try {
-            // Проверяем, есть ли игроки
             const playersSnapshot = await db.collection('players').get();
             if (playersSnapshot.empty) {
                 console.log('Создаем данные по умолчанию...');
@@ -274,12 +295,11 @@ const DataManager = {
         for (const player of defaultPlayers) {
             await db.collection('players').add(player);
         }
-        
         console.log('Игроки по умолчанию созданы');
     }
 };
 
-// Глобальные переменные
+// =========== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ===========
 let currentUser = null;
 let isAdmin = false;
 let allPlayers = [];
@@ -292,30 +312,21 @@ let allMatches = [];
 async function initApp() {
     console.log('Инициализация приложения...');
     
-    // Проверяем Firebase
     if (!DataManager.isInitialized()) {
         console.error('Ошибка: Firebase не инициализирован');
         return;
     }
     
     try {
-        // Настраиваем слушатель аутентификации
         setupAuthListener();
-        
-        // Инициализируем данные по умолчанию
         await DataManager.initDefaultData();
-        
-        // Загружаем данные
         await loadAllData();
-        
-        // Инициализируем навигацию
         initNavigation();
+        initResponsiveHeader();
         
-        // Показываем домашнюю страницу (если не была открыта другая через хеш)
         if (!window.location.hash || window.location.hash === '#home') {
             showSection('home');
         } else {
-            // Обрабатываем хеш из URL
             const sectionName = window.location.hash.substring(1);
             if (['home', 'players', 'matches', 'auth', 'admin'].includes(sectionName)) {
                 showSection(sectionName);
@@ -337,7 +348,6 @@ function setupAuthListener() {
             console.log('Пользователь вошел:', user.email);
             currentUser = user.uid;
             
-            // Получаем данные пользователя
             const userData = await DataManager.getUser(user.uid);
             if (userData) {
                 isAdmin = userData.role === 'admin';
@@ -346,12 +356,14 @@ function setupAuthListener() {
             }
             
             updateNavigation();
+            updateAdminLinks();
         } else {
             console.log('Пользователь вышел');
             currentUser = null;
             isAdmin = false;
             document.getElementById('current-username').textContent = '';
             updateNavigation();
+            updateAdminLinks();
         }
     });
 }
@@ -378,29 +390,27 @@ async function loadAllData() {
 
 // =========== НАВИГАЦИЯ ===========
 
-// Функции отображения секций
 window.showSection = function (name) {
     console.log('Переход на секцию:', name);
     
     try {
-        // Скрываем все секции
+        closeMobileMenu();
+        
         document.querySelectorAll('section').forEach(s => {
             if (s.id.startsWith('section-')) {
                 s.style.display = 'none';
             }
         });
         
-        // Показываем нужную секцию
         const section = document.getElementById('section-' + name);
         if (section) {
             section.style.display = 'block';
-            // Обновляем URL
             window.location.hash = name;
+            window.scrollTo(0, 0);
         } else {
             console.error('Секция не найдена:', 'section-' + name);
         }
 
-        // Обработка специальных случаев
         if (name === 'admin') {
             const adminLoggedIn = document.getElementById('admin-logged-in');
             const adminLoginArea = document.getElementById('admin-login-area');
@@ -423,7 +433,6 @@ window.showSection = function (name) {
     }
 };
 
-// Инициализация навигации
 function initNavigation() {
     document.querySelectorAll('nav a').forEach(link => {
         link.addEventListener('click', (e) => {
@@ -433,7 +442,6 @@ function initNavigation() {
         });
     });
     
-    // Обновить навигацию в зависимости от статуса
     updateNavigation();
 }
 
@@ -454,9 +462,21 @@ function updateNavigation() {
     }
 }
 
+function updateAdminLinks() {
+    const adminFooterLink = document.getElementById('admin-footer-link');
+    const adminNav = document.getElementById('admin-nav');
+    
+    if (currentUser && isAdmin) {
+        if (adminFooterLink) adminFooterLink.style.display = 'inline';
+        if (adminNav) adminNav.style.display = 'inline';
+    } else {
+        if (adminFooterLink) adminFooterLink.style.display = 'none';
+        if (adminNav) adminNav.style.display = 'none';
+    }
+}
+
 // =========== АУТЕНТИФИКАЦИЯ ===========
 
-// Регистрация
 window.register = async () => {
     const username = document.getElementById('reg-username').value.trim();
     const password = document.getElementById('reg-password').value.trim();
@@ -478,7 +498,6 @@ window.register = async () => {
         return;
     }
     
-    // Проверяем, не пытаются ли зарегистрировать админа
     if (username.toLowerCase() === 'admin') {
         alert('Логин "admin" зарезервирован. Используйте другой логин.');
         return;
@@ -488,7 +507,6 @@ window.register = async () => {
         await DataManager.register(email, password, username);
         alert('Регистрация прошла успешно! Теперь вы можете войти.');
         
-        // Очищаем поля
         document.getElementById('reg-username').value = '';
         document.getElementById('reg-password').value = '';
         
@@ -503,7 +521,6 @@ window.register = async () => {
     }
 };
 
-// Вход
 window.login = async () => {
     const username = document.getElementById('login-username').value.trim();
     const password = document.getElementById('login-password').value.trim();
@@ -522,11 +539,9 @@ window.login = async () => {
         
         alert(`Добро пожаловать, ${username}${isAdmin ? ' (администратор)' : ''}!`);
         
-        // Очищаем поля
         document.getElementById('login-username').value = '';
         document.getElementById('login-password').value = '';
         
-        // Переходим на главную
         showSection('home');
         
     } catch (error) {
@@ -540,7 +555,6 @@ window.login = async () => {
     }
 };
 
-// Выход
 window.logout = async () => {
     try {
         await DataManager.logout();
@@ -553,7 +567,6 @@ window.logout = async () => {
 
 // =========== ОТОБРАЖЕНИЕ ДАННЫХ ===========
 
-// Показать всех игроков
 async function displayAllPlayers() {
     const container = document.getElementById('players-list');
     if (!container) return;
@@ -594,8 +607,8 @@ async function displayAllPlayers() {
     }
 }
 
-// Показать прошедшие матчи
-// Показать прошедшие матчи
+// =========== ОТОБРАЖЕНИЕ МАТЧЕЙ ===========
+
 async function displayPastMatches() {
     const container = document.getElementById('matches-list');
     if (!container) return;
@@ -603,129 +616,38 @@ async function displayPastMatches() {
     try {
         allMatches = await DataManager.getMatches();
         allTeams = await DataManager.getTeams();
+        allPlayers = await DataManager.getPlayers();
         
         if (allMatches.length === 0) {
-            container.innerHTML = '<p style="text-align: center; padding: 40px; color: #666; font-size: 1.2rem;">Нет завершенных матчей</p>';
+            container.innerHTML = '<p style="text-align: center; padding: 40px; color: #666;">Нет завершенных матчей</p>';
             return;
         }
         
         let html = '';
         allMatches.forEach(match => {
-            // Фильтруем только завершенные матчи
             if (match.status !== 'completed') return;
             
-            // Функция для получения игроков команды
-            const getTeamPlayers = (teamName) => {
-                const team = allTeams[teamName];
-                if (!team) return [];
-                return Array.isArray(team.players) ? team.players : [];
-            };
-            
-            const matchDate = match.date || (match.timestamp ? new Date(match.timestamp).toLocaleDateString('ru-RU', {
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            }) : 'Дата не указана');
-            
-            html += `
-                <div class="match-card">
-                    <div class="match-header">
-                        <h3>${match.description || 'Волейбольный матч'}</h3>
-                        <span class="match-date">${matchDate}</span>
-                    </div>
-                    
-                    ${match.scores ? `
-                        <div class="match-table-container">
-                            <table class="match-results-table">
-                                <thead>
-                                    <tr>
-                                        <th style="min-width: 200px;">Команда / Игроки</th>
-                                        ${match.teams.map(teamName => {
-                                            const teamPlayers = getTeamPlayers(teamName);
-                                            const shortName = teamName.length > 30 ? teamName.substring(0, 27) + '...' : teamName;
-                                            return `
-                                                <th style="min-width: 150px;">
-                                                    <div style="margin-bottom: 10px; font-size: 0.9rem; font-weight: bold;">${shortName}</div>
-                                                    <div class="team-thumbnail">
-                                                        ${teamPlayers.slice(0, 4).map(player => `
-                                                            <img src="${player.photo || 'images/default-player.png'}" 
-                                                                 alt="${player.name}"
-                                                                 title="${player.name}"
-                                                                 onerror="this.src='images/default-player.png'">
-                                                        `).join('')}
-                                                        ${teamPlayers.length > 4 ? `<span style="color: #666; font-size: 0.8rem;">+${teamPlayers.length - 4}</span>` : ''}
-                                                    </div>
-                                                </th>
-                                            `;
-                                        }).join('')}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${match.teams.map(teamName => {
-                                        const teamPlayers = getTeamPlayers(teamName);
-                                        return `
-                                            <tr>
-                                                <td>
-                                                    <div class="team-display">
-                                                        ${teamPlayers.map(player => `
-                                                            <div class="team-player-display">
-                                                                <img src="${player.photo || 'images/default-player.png'}" 
-                                                                     alt="${player.name}"
-                                                                     onerror="this.src='images/default-player.png'">
-                                                                <span>${player.name}</span>
-                                                            </div>
-                                                        `).join('')}
-                                                    </div>
-                                                </td>
-                                                ${match.teams.map(opponent => {
-                                                    if (teamName === opponent) {
-                                                        return '<td class="score-cell" style="background: #f8f9fa; color: #999;">-</td>';
-                                                    } else {
-                                                        const score = match.scores && match.scores[teamName] && match.scores[teamName][opponent] ? 
-                                                                      match.scores[teamName][opponent] : '0:0';
-                                                        return `<td class="score-cell">${score}</td>`;
-                                                    }
-                                                }).join('')}
-                                            </tr>
-                                        `;
-                                    }).join('')}
-                                </tbody>
-                            </table>
-                        </div>
-                    ` : `
-                        <div style="text-align: center; padding: 20px; color: #666;">
-                            <p>Счет не указан</p>
-                        </div>
-                    `}
-                    
-                    <div class="match-footer">
-                        <div style="margin-bottom: 5px;">
-                            <strong>Участники:</strong> ${match.teams.join(', ')}
-                        </div>
-                        <div style="color: #28a745; font-weight: bold;">
-                            ✅ Матч завершен
-                        </div>
-                    </div>
-                </div>
-            `;
+            if (match.matchType === 'points') {
+                html += displayPointsMatch(match);
+            } else {
+                html += displayClassicMatch(match);
+            }
         });
         
-        // Если нет завершенных матчей
         if (html === '') {
-            html = '<p style="text-align: center; padding: 40px; color: #666; font-size: 1.2rem;">Нет завершенных матчей</p>';
+            html = '<p style="text-align: center; padding: 40px; color: #666;">Нет завершенных матчей</p>';
         }
         
         container.innerHTML = html;
+        
     } catch (error) {
         console.error('Ошибка загрузки матчей:', error);
         container.innerHTML = '<p style="text-align: center; padding: 40px; color: #dc3545;">Ошибка загрузки матчей</p>';
     }
 }
+
 // =========== АДМИНКА ===========
 
-// Показать панель администратора
 window.showAdminDashboard = () => {
     if (!isAdmin) return;
     
@@ -748,37 +670,12 @@ window.showAdminDashboard = () => {
                 <button onclick="showCreateMatch()" class="admin-btn" style="width: 100%; margin: 5px 0;">Создать матч</button>
                 <button onclick="showEditMatches()" class="admin-btn" style="width: 100%; margin: 5px 0;">Редактировать матчи</button>
             </div>
-            
-            <div class="admin-stat-card">
-                <h4 style="margin-top: 0;">Последние матчи</h4>
-                ${getRecentMatchesHTML()}
-            </div>
         </div>
     `;
 };
 
-function getRecentMatchesHTML() {
-    const recentMatches = allMatches.slice(0, 3);
-    
-    if (recentMatches.length === 0) {
-        return '<p>Нет завершенных матчей</p>';
-    }
-    
-    let html = '';
-    recentMatches.forEach(match => {
-        html += `
-            <div class="recent-match" style="margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 8px;">
-                <div style="font-weight: bold; color: #1e3c72;">${match.description || 'Матч'}</div>
-                <div style="font-size: 0.9rem; color: #666;">${match.date || new Date(match.timestamp).toLocaleDateString()}</div>
-                <div style="font-size: 0.9rem;">${match.teams.join(', ')}</div>
-            </div>
-        `;
-    });
-    
-    return html;
-}
+// =========== СОЗДАНИЕ КОМАНДЫ ===========
 
-// Создать команду
 window.showCreateTeam = async () => {
     if (!isAdmin) {
         alert('Доступ только для администраторов');
@@ -791,146 +688,217 @@ window.showCreateTeam = async () => {
         
         const area = document.getElementById('admin-area');
         area.innerHTML = `
-            <h3 style="color: #1e3c72;">Создать новую команду</h3>
+            <h3 style="color: #1e3c72; margin-bottom: 20px;">Создать новую команду</h3>
             
-            <p>Название команды будет создано автоматически из имен выбранных игроков.</p>
-            
-            <h4>Выберите игроков (минимум 2):</h4>
-            <div id="players-selection" class="players-selection-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin: 20px 0;">
-                ${allPlayers.map((player, index) => `
-                    <div class="player-checkbox-card" style="border: 2px solid #e0e0e0; border-radius: 10px; padding: 15px; cursor: pointer; transition: all 0.3s ease;">
-                        <label class="player-checkbox-label" style="cursor: pointer; display: block;">
-                            <input type="checkbox" value="${player.name}" class="player-checkbox-input" style="display: none;">
-                            <div class="player-checkbox-content" style="text-align: center;">
-                                <img src="${player.photo || 'images/default-player.png'}" 
-                                     alt="${player.name}"
-                                     onerror="this.src='images/default-player.png'"
-                                     style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin-bottom: 10px;">
-                                <span style="display: block;">${player.name}</span>
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                <p style="margin-bottom: 15px; color: #666;">
+                    Название команды будет создано автоматически из имен выбранных игроков.
+                </p>
+                
+                <h4 style="color: #1e3c72; margin-bottom: 15px;">Выберите игроков (минимум 2):</h4>
+                
+                ${allPlayers.length === 0 ? 
+                    '<p style="color: #dc3545;">Нет игроков для создания команды. Сначала добавьте игроков.</p>' : 
+                    `<div id="players-selection" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; max-height: 500px; overflow-y: auto; padding: 10px; background: white; border-radius: 10px;">
+                        ${allPlayers.map((player) => `
+                            <div class="player-checkbox-card" data-player-id="${player.id}" style="border: 2px solid #e0e0e0; border-radius: 10px; padding: 15px; cursor: pointer; transition: all 0.3s ease;">
+                                <div style="text-align: center;">
+                                    <img src="${player.photo || 'images/default-player.png'}" 
+                                         alt="${player.name}"
+                                         onerror="this.src='images/default-player.png'"
+                                         style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin-bottom: 10px; border: 3px solid #1e3c72;">
+                                    <div style="font-weight: bold; color: #1e3c72; margin-bottom: 10px;">${player.name}</div>
+                                    <input type="checkbox" value="${player.name}" class="player-checkbox-input" style="width: 20px; height: 20px; cursor: pointer;">
+                                </div>
                             </div>
-                        </label>
-                    </div>
-                `).join('')}
+                        `).join('')}
+                    </div>`
+                }
             </div>
             
-            <div style="margin: 30px 0;">
-                <button onclick="saveNewTeam()" class="btn-primary" style="padding: 12px 30px; margin-right: 10px;">Создать команду</button>
+            <div style="display: flex; gap: 15px; margin-top: 20px;">
+                <button onclick="saveNewTeam()" class="btn-primary" style="padding: 12px 30px;">Создать команду</button>
                 <button onclick="showAdminDashboard()" class="btn-secondary">Отмена</button>
             </div>
             
-            <h4>Существующие команды:</h4>
+            <h4 style="color: #1e3c72; margin-top: 40px; margin-bottom: 20px;">Существующие команды:</h4>
             <div id="existing-teams" style="margin-top: 20px;"></div>
         `;
         
         // Добавляем обработчики кликов
-        document.querySelectorAll('.player-checkbox-card').forEach(card => {
-            card.addEventListener('click', function() {
-                const checkbox = this.querySelector('.player-checkbox-input');
-                checkbox.checked = !checkbox.checked;
-                if (checkbox.checked) {
-                    this.style.borderColor = '#1e3c72';
-                    this.style.backgroundColor = '#f0f4ff';
-                } else {
-                    this.style.borderColor = '#e0e0e0';
-                    this.style.backgroundColor = 'transparent';
-                }
+        setTimeout(() => {
+            document.querySelectorAll('.player-checkbox-card').forEach(card => {
+                const checkbox = card.querySelector('.player-checkbox-input');
+                
+                card.addEventListener('click', function(e) {
+                    if (e.target.tagName === 'INPUT') return;
+                    
+                    checkbox.checked = !checkbox.checked;
+                    
+                    if (checkbox.checked) {
+                        this.style.borderColor = '#1e3c72';
+                        this.style.backgroundColor = '#f0f4ff';
+                        this.style.transform = 'scale(0.98)';
+                    } else {
+                        this.style.borderColor = '#e0e0e0';
+                        this.style.backgroundColor = 'transparent';
+                        this.style.transform = 'scale(1)';
+                    }
+                });
+                
+                checkbox.addEventListener('change', function(e) {
+                    const parentCard = this.closest('.player-checkbox-card');
+                    if (this.checked) {
+                        parentCard.style.borderColor = '#1e3c72';
+                        parentCard.style.backgroundColor = '#f0f4ff';
+                        parentCard.style.transform = 'scale(0.98)';
+                    } else {
+                        parentCard.style.borderColor = '#e0e0e0';
+                        parentCard.style.backgroundColor = 'transparent';
+                        parentCard.style.transform = 'scale(1)';
+                    }
+                    e.stopPropagation();
+                });
             });
-        });
+        }, 100);
         
         await displayExistingTeams();
+        
     } catch (error) {
+        console.error('Ошибка в showCreateTeam:', error);
         alert(`Ошибка загрузки данных: ${error.message}`);
     }
 };
 
-// Отображение существующих команд
 async function displayExistingTeams() {
     const container = document.getElementById('existing-teams');
     if (!container) return;
     
-    allTeams = await DataManager.getTeams();
-    
-    if (Object.keys(allTeams).length === 0) {
-        container.innerHTML = '<p>Нет созданных команд</p>';
-        return;
-    }
-    
-    let html = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">';
-    
-    for (const [teamName, teamData] of Object.entries(allTeams)) {
-        const players = Array.isArray(teamData.players) ? teamData.players : [];
-        html += `
-            <div class="team-card" style="background: white; border-radius: 15px; padding: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); border-left: 5px solid #ffd700;">
-                <div class="team-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <h4 style="margin: 0; color: #1e3c72;">${teamName}</h4>
-                    <button onclick="deleteTeam('${teamName}')" class="btn-delete" style="padding: 5px 10px; font-size: 0.9rem;">Удалить</button>
-                </div>
-                <div class="team-players">
-                    ${players.map(player => `
-                        <div class="team-player" style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding: 8px; background: #f8f9fa; border-radius: 8px;">
-                            <img src="${player.photo || 'images/default-player.png'}" 
-                                 alt="${player.name}"
-                                 onerror="this.src='images/default-player.png'"
-                                 style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
-                            <span>${player.name}</span>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-        `;
-    }
-    
-    html += '</div>';
-    container.innerHTML = html;
-}
-
-// Сохранение новой команды
-window.saveNewTeam = async () => {
-    const selectedPlayers = Array.from(document.querySelectorAll('.player-checkbox-input:checked'))
-        .map(cb => cb.value);
-    
-    if (selectedPlayers.length < 2) {
-        alert('Выберите минимум 2 игрока');
-        return;
-    }
-    
-    // Создаем название команды из имен игроков
-    const teamName = selectedPlayers.join(' + ');
-    
-    // Находим полные данные выбранных игроков
-    const playersData = allPlayers.filter(p => selectedPlayers.includes(p.name));
-    
     try {
-        await DataManager.saveTeam(teamName, playersData);
-        alert(`Команда создана: ${teamName}`);
-        
-        // Обновляем список команд
         allTeams = await DataManager.getTeams();
-        showCreateTeam();
+        
+        if (Object.keys(allTeams).length === 0) {
+            container.innerHTML = '<p style="color: #666; text-align: center; padding: 20px;">Нет созданных команд</p>';
+            return;
+        }
+        
+        let html = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px;">';
+        
+        for (const [teamName, teamData] of Object.entries(allTeams)) {
+            const players = Array.isArray(teamData.players) ? teamData.players : [];
+            
+            html += `
+                <div class="team-card" style="background: white; border-radius: 15px; padding: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); border-left: 5px solid #ffd700;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #f0f0f0;">
+                        <h4 style="margin: 0; color: #1e3c72; font-size: 1.1rem;">${teamName}</h4>
+                        <button onclick="deleteTeam('${teamName}')" class="btn-delete" style="padding: 6px 12px; font-size: 0.85rem;">Удалить</button>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        ${players.map(player => `
+                            <div style="display: flex; align-items: center; gap: 12px; padding: 8px; background: #f8f9fa; border-radius: 8px; transition: transform 0.2s;">
+                                <img src="${player.photo || 'images/default-player.png'}" 
+                                     alt="${player.name}"
+                                     onerror="this.src='images/default-player.png'"
+                                     style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #1e3c72;">
+                                <span style="font-weight: 500; color: #333;">${player.name}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid #e0e0e0; color: #666; font-size: 0.85rem;">
+                        <span>👥 ${players.length} игроков</span>
+                    </div>
+                </div>
+            `;
+        }
+        
+        html += '</div>';
+        container.innerHTML = html;
         
     } catch (error) {
-        alert(`Ошибка создания команды: ${error.message}`);
+        console.error('Ошибка в displayExistingTeams:', error);
+        container.innerHTML = '<p style="color: #dc3545;">Ошибка загрузки команд</p>';
+    }
+}
+
+window.saveNewTeam = async () => {
+    if (!isAdmin) {
+        alert('Доступ только для администраторов');
+        return;
+    }
+    
+    try {
+        const selectedCheckboxes = Array.from(document.querySelectorAll('.player-checkbox-input:checked'));
+        
+        if (selectedCheckboxes.length < 2) {
+            alert('❌ Выберите минимум 2 игрока для создания команды');
+            return;
+        }
+        
+        const selectedPlayerNames = selectedCheckboxes.map(cb => cb.value);
+        
+        allPlayers = await DataManager.getPlayers();
+        
+        const playersData = allPlayers.filter(player => 
+            selectedPlayerNames.includes(player.name)
+        );
+        
+        if (playersData.length < 2) {
+            alert('❌ Не удалось найти данные выбранных игроков');
+            return;
+        }
+        
+        const teamName = selectedPlayerNames.join(' + ');
+        
+        const existingTeams = await DataManager.getTeams();
+        if (existingTeams[teamName]) {
+            alert(`⚠️ Команда "${teamName}" уже существует`);
+            return;
+        }
+        
+        await DataManager.saveTeam(teamName, playersData);
+        
+        alert(`✅ Команда успешно создана: ${teamName}`);
+        
+        allTeams = await DataManager.getTeams();
+        
+        const area = document.getElementById('admin-area');
+        if (area) {
+            await showCreateTeam();
+        }
+        
+    } catch (error) {
+        console.error('Ошибка в saveNewTeam:', error);
+        alert(`❌ Ошибка создания команды: ${error.message}`);
     }
 };
 
-// Удаление команды
 window.deleteTeam = async (teamName) => {
-    if (!confirm(`Удалить команду "${teamName}"?`)) return;
+    if (!isAdmin) {
+        alert('Доступ только для администраторов');
+        return;
+    }
+    
+    if (!confirm(`🗑️ Вы уверены, что хотите удалить команду "${teamName}"?`)) {
+        return;
+    }
     
     try {
         await DataManager.deleteTeam(teamName);
-        alert('Команда удалена');
         
-        // Обновляем список команд
+        alert(`✅ Команда "${teamName}" удалена`);
+        
         allTeams = await DataManager.getTeams();
-        displayExistingTeams();
+        
+        await displayExistingTeams();
         
     } catch (error) {
-        alert(`Ошибка удаления команды: ${error.message}`);
+        console.error('Ошибка в deleteTeam:', error);
+        alert(`❌ Ошибка удаления команды: ${error.message}`);
     }
 };
 
-// Создать таблицу матча
+// =========== СОЗДАНИЕ МАТЧА ===========
+
 window.showCreateMatch = async () => {
     if (!isAdmin) {
         alert('Доступ только для администраторов');
@@ -939,66 +907,116 @@ window.showCreateMatch = async () => {
     
     try {
         allTeams = await DataManager.getTeams();
-        const teamNames = Object.keys(allTeams);
-        
-        if (teamNames.length < 2) {
-            alert('Сначала создайте хотя бы две команды');
-            return;
-        }
+        allPlayers = await DataManager.getPlayers();
         
         const area = document.getElementById('admin-area');
         area.innerHTML = `
-            <h3 style="color: #1e3c72;">Создать таблицу матча</h3>
+            <h3 style="color: #1e3c72;">Создать новый матч</h3>
             
-            <div class="match-creation-container">
-                <h4>Выберите команды для участия (минимум 2):</h4>
-                <div id="team-selection-area" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; margin: 20px 0;">
-                    ${teamNames.map((teamName, index) => {
-                        const team = allTeams[teamName];
-                        const players = Array.isArray(team.players) ? team.players : [];
-                        return `
-                            <div class="team-selection-card" style="border: 2px solid #e0e0e0; border-radius: 10px; padding: 15px; cursor: pointer; transition: all 0.3s ease;">
-                                <label class="team-selection-label" style="cursor: pointer; display: block;">
-                                    <input type="checkbox" value="${teamName}" class="team-checkbox-input" style="display: none;" ${index < 2 ? 'checked' : ''}>
-                                    <div class="team-selection-content" style="text-align: center;">
-                                        <div class="team-players-preview" style="display: flex; justify-content: center; gap: 5px; margin-bottom: 10px;">
-                                            ${players.slice(0, 3).map(player => `
-                                                <img src="${player.photo || 'images/default-player.png'}" 
-                                                     alt="${player.name}"
-                                                     title="${player.name}"
-                                                     onerror="this.src='images/default-player.png'"
-                                                     style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid white;">
-                                            `).join('')}
-                                            ${players.length > 3 ? `<span style="background: #1e3c72; color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.9rem;">+${players.length - 3}</span>` : ''}
-                                        </div>
-                                        <div class="team-names" style="font-size: 0.9rem; color: #666;">
-                                            ${teamName}
-                                        </div>
-                                    </div>
-                                </label>
-                            </div>
-                        `;
-                    }).join('')}
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin: 30px 0;">
+                <div onclick="selectMatchType('points')" id="match-type-points" style="background: white; border-radius: 15px; padding: 30px; cursor: pointer; border: 3px solid #e0e0e0; transition: all 0.3s ease;">
+                    <div style="font-size: 3rem; text-align: center; margin-bottom: 20px;">🎯</div>
+                    <h4 style="text-align: center; color: #1e3c72; margin-bottom: 15px;">Игра на очки</h4>
+                    <ul style="color: #666; font-size: 0.9rem; list-style: none; padding: 0;">
+                        <li style="margin-bottom: 10px;">✓ 1 на 1 или команды</li>
+                        <li style="margin-bottom: 10px;">✓ Несколько партий</li>
+                        <li style="margin-bottom: 10px;">✓ Сумма очков</li>
+                        <li style="margin-bottom: 10px;">✓ Таблица мест</li>
+                    </ul>
                 </div>
                 
-                <div class="match-description" style="margin: 20px 0;">
-                    <label style="display: block; margin-bottom: 8px; font-weight: bold;">Название/описание матча:</label>
-                    <input type="text" id="match-description" placeholder="Например: Турнир по волейболу" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1rem;">
-                </div>
-                
-                <div class="match-actions">
-                    <button onclick="generateMatchTable()" class="btn-primary" style="padding: 12px 30px; margin-right: 10px;">Создать таблицу матчей</button>
-                    <button onclick="showAdminDashboard()" class="btn-secondary">Отмена</button>
+                <div onclick="selectMatchType('classic')" id="match-type-classic" style="background: white; border-radius: 15px; padding: 30px; cursor: pointer; border: 3px solid #e0e0e0; transition: all 0.3s ease;">
+                    <div style="font-size: 3rem; text-align: center; margin-bottom: 20px;">🏐</div>
+                    <h4 style="text-align: center; color: #1e3c72; margin-bottom: 15px;">Классический волейбол</h4>
+                    <ul style="color: #666; font-size: 0.9rem; list-style: none; padding: 0;">
+                        <li style="margin-bottom: 10px;">✓ 2+ команд</li>
+                        <li style="margin-bottom: 10px;">✓ До 2 побед</li>
+                        <li style="margin-bottom: 10px;">✓ Ввод 3 партий</li>
+                        <li style="margin-bottom: 10px;">✓ Победа = 2 очка</li>
+                    </ul>
                 </div>
             </div>
             
-            <div id="match-table-container" style="margin-top: 30px;"></div>
+            <div id="match-creation-form" style="display: none;"></div>
         `;
         
-        // Добавляем обработчики кликов
-        document.querySelectorAll('.team-selection-card').forEach(card => {
-            card.addEventListener('click', function() {
-                const checkbox = this.querySelector('.team-checkbox-input');
+    } catch (error) {
+        alert(`Ошибка загрузки данных: ${error.message}`);
+    }
+};
+
+window.selectMatchType = (type) => {
+    document.querySelectorAll('[id^="match-type-"]').forEach(el => {
+        el.style.border = '3px solid #e0e0e0';
+        el.style.background = 'white';
+    });
+    
+    const selectedEl = document.getElementById(`match-type-${type}`);
+    if (selectedEl) {
+        selectedEl.style.border = '3px solid #1e3c72';
+        selectedEl.style.background = '#f0f4ff';
+    }
+    
+    if (type === 'points') {
+        showPointsMatchForm();
+    } else {
+        showClassicMatchForm();
+    }
+};
+
+// =========== ФОРМА КЛАССИЧЕСКОГО МАТЧА ===========
+
+function showClassicMatchForm() {
+    const container = document.getElementById('match-creation-form');
+    container.style.display = 'block';
+    
+    const teamNames = Object.keys(allTeams);
+    
+    container.innerHTML = `
+        <h4 style="color: #1e3c72; margin-bottom: 20px;">Создать классический матч (до 2 побед)</h4>
+        
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+            <p style="margin-bottom: 15px;"><strong>Выберите команды (минимум 2):</strong></p>
+            <div id="teams-classic-selection" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; max-height: 400px; overflow-y: auto; padding: 10px; background: white; border-radius: 10px;">
+                ${teamNames.map((teamName) => {
+                    const team = allTeams[teamName];
+                    const players = Array.isArray(team?.players) ? team.players : [];
+                    return `
+                        <div class="team-selection-card" style="border: 2px solid #e0e0e0; border-radius: 10px; padding: 15px; cursor: pointer; transition: all 0.3s ease;">
+                            <div style="display: flex; align-items: center; gap: 15px;">
+                                <input type="checkbox" value="${teamName}" class="team-classic-checkbox" style="width: 20px; height: 20px;">
+                                <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                                    ${players.slice(0, 3).map(player => `
+                                        <img src="${player.photo || 'images/default-player.png'}" 
+                                             style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover; border: 2px solid #1e3c72;">
+                                    `).join('')}
+                                    ${players.length > 3 ? `<span style="background: #1e3c72; color: white; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem;">+${players.length - 3}</span>` : ''}
+                                </div>
+                                <span style="font-size: 0.95rem; font-weight: bold; color: #1e3c72;">${teamName}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        </div>
+        
+        <div style="margin: 20px 0;">
+            <label style="display: block; margin-bottom: 8px; font-weight: bold;">Название матча:</label>
+            <input type="text" id="classic-match-description" placeholder="Например: Финальный матч" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px;">
+        </div>
+        
+        <div class="match-actions">
+            <button onclick="generateClassicMatch()" class="btn-primary" style="padding: 12px 30px;">Создать таблицу</button>
+            <button onclick="showCreateMatch()" class="btn-secondary">Назад</button>
+        </div>
+        
+        <div id="classic-match-container" style="margin-top: 30px;"></div>
+    `;
+    
+    document.querySelectorAll('.team-selection-card').forEach(card => {
+        card.addEventListener('click', function(e) {
+            if (e.target.tagName !== 'INPUT') {
+                const checkbox = this.querySelector('.team-classic-checkbox');
                 checkbox.checked = !checkbox.checked;
                 if (checkbox.checked) {
                     this.style.borderColor = '#1e3c72';
@@ -1007,233 +1025,1018 @@ window.showCreateMatch = async () => {
                     this.style.borderColor = '#e0e0e0';
                     this.style.backgroundColor = 'transparent';
                 }
-            });
-        });
-    } catch (error) {
-        alert(`Ошибка загрузки данных: ${error.message}`);
-    }
-};
-
-// Генерация таблицы матча
-window.generateMatchTable = async () => {
-    const selectedTeams = Array.from(document.querySelectorAll('.team-checkbox-input:checked'))
-        .map(cb => cb.value);
-    
-    const matchDescription = document.getElementById('match-description').value.trim() || 
-                           `Матч от ${new Date().toLocaleDateString()}`;
-    
-    if (selectedTeams.length < 2) {
-        alert('Выберите хотя бы две команды');
-        return;
-    }
-    
-    const container = document.getElementById('match-table-container');
-    container.innerHTML = '';
-    
-    // Создаем матч
-    const match = {
-        description: matchDescription,
-        teams: selectedTeams,
-        date: new Date().toLocaleString(),
-        timestamp: Date.now(),
-        status: 'active',
-        scores: {}
-    };
-    
-    try {
-        const matchId = await DataManager.saveMatch(match);
-        match.id = matchId;
-        
-        // Добавляем в локальный список
-        allMatches.push(match);
-        
-        // Генерируем таблицу
-        await generateMatchTableHTML(selectedTeams, matchId, matchDescription);
-    } catch (error) {
-        alert(`Ошибка создания матча: ${error.message}`);
-    }
-};
-
-// Генерация HTML таблицы матча
-async function generateMatchTableHTML(teams, matchId, description, containerId = 'match-table-container') {
-    const container = document.getElementById(containerId);
-    if (!container) {
-        console.error('Контейнер не найден:', containerId);
-        return;
-    }
-    
-    allTeams = await DataManager.getTeams();
-    
-    // Функция для получения игроков команды
-    const getTeamPlayers = (teamName) => {
-        const team = allTeams[teamName];
-        if (!team) return [];
-        return Array.isArray(team.players) ? team.players : [];
-    };
-    
-    let html = `
-        <div class="match-table-wrapper" style="background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); margin-top: 20px;">
-            <h4 style="color: #1e3c72; margin-bottom: 10px;">${description}</h4>
-            <p class="match-date" style="color: #666; margin-bottom: 20px;">Дата: ${new Date().toLocaleDateString()}</p>
-            
-            <div class="table-responsive">
-                <table class="match-table" style="width: 100%; border-collapse: collapse;">
-                    <thead>
-                        <tr>
-                            <th class="team-header" style="padding: 15px; text-align: left; border-bottom: 2px solid #eee; color: #1e3c72;">Команда / Игроки</th>
-    `;
-    
-    // Заголовки с командами и фото игроков
-    teams.forEach(teamName => {
-        const teamPlayers = getTeamPlayers(teamName);
-        html += `<th class="team-column-header" style="padding: 15px; text-align: center; border-bottom: 2px solid #eee;">
-                    <div class="team-header-content">
-                        <div class="team-photos" style="display: flex; justify-content: center; gap: 5px; margin-bottom: 10px;">
-                            ${teamPlayers.map(player => `
-                                <img src="${player.photo || 'images/default-player.png'}" 
-                                     alt="${player.name}"
-                                     title="${player.name}"
-                                     onerror="this.src='images/default-player.png'"
-                                     style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover; border: 2px solid white;">
-                            `).join('')}
-                        </div>
-                        <div class="team-names-small" style="font-size: 0.8rem; color: #666;">
-                            ${teamName}
-                        </div>
-                    </div>
-                 </th>`;
-    });
-    
-    html += `</tr></thead><tbody>`;
-    
-    // Строки с командами
-    teams.forEach((teamName, rowIndex) => {
-        const teamPlayers = getTeamPlayers(teamName);
-        html += `<tr>
-                    <td class="team-row-header" style="padding: 15px; border-bottom: 1px solid #eee;">
-                        <div class="team-row-content" style="display: flex; align-items: center; gap: 10px;">
-                            <div class="team-photos" style="display: flex; gap: 5px;">
-                                ${teamPlayers.map(player => `
-                                    <img src="${player.photo || 'images/default-player.png'}" 
-                                         alt="${player.name}"
-                                         title="${player.name}"
-                                         onerror="this.src='images/default-player.png'"
-                                         style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover; border: 2px solid white;">
-                                `).join('')}
-                            </div>
-                            <div class="team-names" style="font-size: 0.9rem;">
-                                ${teamName}
-                            </div>
-                        </div>
-                    </td>`;
-        
-        teams.forEach((opponent, colIndex) => {
-            if (rowIndex === colIndex) {
-                html += `<td style="padding: 15px; text-align: center; border-bottom: 1px solid #eee; background: #f8f9fa; color: #999;">-</td>`;
-            } else {
-                const cellId = `${matchId}_${teamName}_${opponent}`;
-                html += `<td style="padding: 15px; text-align: center; border-bottom: 1px solid #eee;">
-                            <input type="text" 
-                                   id="${cellId}" 
-                                   placeholder="0:0" 
-                                   class="score-input"
-                                   style="width: 80px; padding: 8px; text-align: center; border: 2px solid #e0e0e0; border-radius: 5px;"
-                                   onchange="saveScore('${matchId}', '${teamName}', '${opponent}', this.value)">
-                         </td>`;
             }
         });
-        
-        html += `</tr>`;
     });
-    
-    html += `</tbody></table></div>`;
-    
-    html += `
-        <div class="match-actions" style="margin-top: 30px; display: flex; gap: 10px;">
-            <button onclick="saveMatchScores('${matchId}')" class="btn-primary">Сохранить все результаты</button>
-            <button onclick="finishMatch('${matchId}')" class="btn-success">Завершить матч</button>
-            <button onclick="showEditMatches()" class="btn-secondary">Назад к списку</button>
-        </div>
-    `;
-    
-    container.innerHTML = html;
-    
-    // Загружаем сохраненные счета
-    loadSavedScores(matchId);
 }
 
-// Сохранение счета
-window.saveScore = async (matchId, teamA, teamB, score) => {
+// =========== ФУНКЦИИ ДЛЯ РАБОТЫ С КЛАССИЧЕСКИМ МАТЧЕМ ===========
+
+// Обновление очков команды
+window.updateTeamPoints = (matchId, team, points) => {
     const match = allMatches.find(m => m.id === matchId);
     if (!match) return;
     
-    // Проверяем формат счета
-    if (score && !/^\d+:\d+$/.test(score)) {
-        alert('Введите счет в формате "число:число", например "25:20"');
-        return;
-    }
+    const pointsValue = parseInt(points) || 0;
     
     if (!match.scores) match.scores = {};
-    if (!match.scores[teamA]) match.scores[teamA] = {};
-    
-    match.scores[teamA][teamB] = score;
-    
-    try {
-        await DataManager.saveMatch(match);
-        console.log('Счет сохранен');
-    } catch (error) {
-        console.error('Ошибка сохранения счета:', error);
+    if (!match.scores[team]) {
+        match.scores[team] = { points: 0, sets: {} };
     }
+    
+    match.scores[team].points = pointsValue;
+    
+    const pointsElement = document.getElementById(`points_${matchId}_${team}`);
+    if (pointsElement) {
+        pointsElement.value = pointsValue;
+    }
+    
+    DataManager.saveMatch(match).then(() => {
+        console.log(`Очки для команды ${team} сохранены: ${pointsValue}`);
+    }).catch(error => {
+        console.error('Ошибка сохранения очков:', error);
+    });
 };
 
-// Сохранение всех счетов матча
-window.saveMatchScores = async (matchId) => {
+// Обновление счета партии
+window.updateSetScore = (matchId, team1, team2, setNumber, value) => {
     const match = allMatches.find(m => m.id === matchId);
     if (!match) return;
     
-    const teams = match.teams;
-    teams.forEach(teamA => {
-        teams.forEach(teamB => {
-            if (teamA !== teamB) {
-                const cellId = `${matchId}_${teamA}_${teamB}`;
-                const input = document.getElementById(cellId);
-                if (input && input.value) {
-                    if (!match.scores) match.scores = {};
-                    if (!match.scores[teamA]) match.scores[teamA] = {};
-                    match.scores[teamA][teamB] = input.value;
+    if (!match.scores) match.scores = {};
+    if (!match.scores[team1]) {
+        match.scores[team1] = { points: 0, sets: {} };
+    }
+    if (!match.scores[team1].sets) {
+        match.scores[team1].sets = {};
+    }
+    
+    match.scores[team1].sets[setNumber] = value || null;
+    
+    // Подсчет очков на основе побед в партиях
+    let totalPoints = 0;
+    for (let set = 1; set <= 3; set++) {
+        const score = match.scores[team1].sets[set];
+        if (score && score.includes(':')) {
+            const [score1, score2] = score.split(':').map(Number);
+            if (!isNaN(score1) && !isNaN(score2) && score1 > score2) {
+                totalPoints += 2; // Победа в партии
+            }
+        }
+    }
+    
+    match.scores[team1].points = totalPoints;
+    
+    const pointsInput = document.getElementById(`points_${matchId}_${team1}`);
+    if (pointsInput) {
+        pointsInput.value = totalPoints;
+    }
+    
+    DataManager.saveMatch(match).then(() => {
+        console.log(`Счет партии ${setNumber} для ${team1} сохранен: ${value}, очки: ${totalPoints}`);
+    }).catch(error => {
+        console.error('Ошибка сохранения счета партии:', error);
+    });
+};
+
+// Подсчет мест в классическом матче
+window.calculateClassicStandings = (matchId) => {
+    const match = allMatches.find(m => m.id === matchId);
+    if (!match) return;
+    
+    // Собираем все очки из полей ввода
+    match.teams.forEach(team => {
+        const pointsInput = document.getElementById(`points_${matchId}_${team}`);
+        if (pointsInput) {
+            const points = parseInt(pointsInput.value) || 0;
+            if (!match.scores[team]) {
+                match.scores[team] = { points: 0, sets: {} };
+            }
+            match.scores[team].points = points;
+        }
+        
+        // Собираем сеты
+        match.teams.forEach(opponent => {
+            if (team !== opponent) {
+                for (let set = 1; set <= 3; set++) {
+                    const scoreInput = document.getElementById(`score_${matchId}_${team}_vs_${opponent}_set${set}`);
+                    if (scoreInput && scoreInput.value) {
+                        if (!match.scores[team].sets) {
+                            match.scores[team].sets = {};
+                        }
+                        match.scores[team].sets[set] = scoreInput.value;
+                    }
                 }
             }
         });
     });
     
-    try {
-        await DataManager.saveMatch(match);
-        alert('Результаты сохранены!');
-    } catch (error) {
-        alert(`Ошибка сохранения: ${error.message}`);
-    }
+    const standings = match.teams.map(team => ({
+        name: team,
+        points: match.scores[team]?.points || 0
+    }));
+    
+    standings.sort((a, b) => b.points - a.points);
+    
+    standings.forEach((team, index) => {
+        const rankElement = document.getElementById(`rank_${matchId}_${team.name}`);
+        if (rankElement) {
+            rankElement.textContent = index + 1;
+            
+            if (index === 0) {
+                rankElement.style.color = '#ffd700';
+                rankElement.style.fontWeight = 'bold';
+            } else if (index === 1) {
+                rankElement.style.color = '#c0c0c0';
+                rankElement.style.fontWeight = 'bold';
+            } else if (index === 2) {
+                rankElement.style.color = '#cd7f32';
+                rankElement.style.fontWeight = 'bold';
+            } else {
+                rankElement.style.color = '#666';
+                rankElement.style.fontWeight = 'normal';
+            }
+        }
+    });
+    
+    match.standings = standings;
+    
+    DataManager.saveMatch(match).then(() => {
+        console.log('Турнирная таблица сохранена');
+        
+        let resultsMessage = '🏆 ТУРНИРНАЯ ТАБЛИЦА:\n\n';
+        standings.forEach((team, index) => {
+            resultsMessage += `${index + 1}. ${team.name}\n`;
+            resultsMessage += `   ⚡ Очки: ${team.points}\n\n`;
+        });
+        
+        alert(resultsMessage);
+    }).catch(error => {
+        console.error('Ошибка сохранения турнирной таблицы:', error);
+        alert('❌ Ошибка сохранения результатов');
+    });
 };
 
-// Завершение матча
-window.finishMatch = async (matchId) => {
-    if (!confirm('Завершить матч? После завершения редактирование будет невозможно.')) return;
+// Завершение классического матча
+window.finishClassicMatch = async (matchId) => {
+    if (!confirm('Завершить матч?')) return;
     
     const match = allMatches.find(m => m.id === matchId);
     if (!match) return;
+    
+    calculateClassicStandings(matchId);
     
     match.status = 'completed';
     match.completedAt = new Date().toLocaleString();
     
     try {
         await DataManager.saveMatch(match);
-        alert('Матч завершен!');
+        console.log('Матч завершен и сохранен:', match);
+        alert('✅ Матч завершен! Результаты сохранены.');
+        
+        const index = allMatches.findIndex(m => m.id === matchId);
+        if (index !== -1) {
+            allMatches[index] = match;
+        }
+        
         showEditMatches();
     } catch (error) {
-        alert(`Ошибка завершения матча: ${error.message}`);
+        console.error('Ошибка завершения матча:', error);
+        alert('❌ Ошибка завершения матча');
     }
 };
 
-// Редактирование матчей
+// =========== ГЕНЕРАЦИЯ КЛАССИЧЕСКОГО МАТЧА ===========
+
+window.generateClassicMatch = async () => {
+    const selectedTeams = Array.from(document.querySelectorAll('.team-classic-checkbox:checked'))
+        .map(cb => cb.value);
+    
+    const description = document.getElementById('classic-match-description').value.trim() || 
+                       `Матч от ${new Date().toLocaleDateString()}`;
+    
+    if (selectedTeams.length < 2) {
+        alert('Выберите минимум 2 команды');
+        return;
+    }
+    
+    const container = document.getElementById('classic-match-container');
+    
+    const match = {
+        description: description,
+        matchType: 'classic',
+        teams: selectedTeams,
+        date: new Date().toLocaleString(),
+        timestamp: Date.now(),
+        status: 'active',
+        scores: {},
+        standings: []
+    };
+    
+    selectedTeams.forEach(team => {
+        match.scores[team] = {
+            points: 0,
+            sets: {
+                1: null,
+                2: null,
+                3: null
+            }
+        };
+    });
+    
+    try {
+        const matchId = await DataManager.saveMatch(match);
+        match.id = matchId;
+        allMatches.push(match);
+        
+        let html = `
+            <div style="background: white; border-radius: 15px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); margin-top: 20px;">
+                <h4 style="color: #1e3c72; margin-bottom: 15px;">${description}</h4>
+                <p style="color: #666; margin-bottom: 20px;">Классический матч • Ручной ввод очков</p>
+                
+                <div class="table-responsive">
+                    <table class="match-table" style="width: 100%; border-collapse: collapse; border: 1px solid #dee2e6;">
+                        <thead>
+                            <tr>
+                                <th style="background: #1e3c72; color: white; padding: 15px; text-align: left;">Команда / Игроки</th>
+                                ${selectedTeams.map(teamName => {
+                                    const teamPlayers = allTeams[teamName]?.players || [];
+                                    return `
+                                        <th style="background: #2a5298; color: white; padding: 15px; text-align: center; min-width: 180px;">
+                                            <div style="display: flex; flex-direction: column; align-items: center; gap: 5px;">
+                                                <div style="display: flex; gap: 5px; justify-content: center;">
+                                                    ${teamPlayers.slice(0, 3).map(player => `
+                                                        <img src="${player.photo || 'images/default-player.png'}" 
+                                                             style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover; border: 2px solid white;">
+                                                    `).join('')}
+                                                    ${teamPlayers.length > 3 ? `<span style="background: rgba(255,255,255,0.2); padding: 5px 8px; border-radius: 15px; font-size: 0.7rem;">+${teamPlayers.length - 3}</span>` : ''}
+                                                </div>
+                                                <span style="font-size: 0.9rem; font-weight: bold;">${teamName}</span>
+                                            </div>
+                                        </th>
+                                    `;
+                                }).join('')}
+                                <th style="background: #1e3c72; color: white; padding: 15px; text-align: center; min-width: 80px;">Очки</th>
+                                <th style="background: #1e3c72; color: white; padding: 15px; text-align: center; min-width: 60px;">Место</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${selectedTeams.map((team1, rowIndex) => {
+                                const team1Players = allTeams[team1]?.players || [];
+                                return `
+                                    <tr style="border-bottom: 1px solid #dee2e6;">
+                                        <td style="padding: 15px; background: #f8f9fa; font-weight: bold;">
+                                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                                ${team1Players.slice(0, 3).map(player => `
+                                                    <img src="${player.photo || 'images/default-player.png'}" 
+                                                         style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover; border: 2px solid #1e3c72;">
+                                                `).join('')}
+                                                ${team1Players.length > 3 ? `<span style="background: #1e3c72; color: white; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem;">+${team1Players.length - 3}</span>` : ''}
+                                                <span style="color: #1e3c72;">${team1}</span>
+                                            </div>
+                                        </td>
+                                        ${selectedTeams.map((team2, colIndex) => {
+                                            if (team1 === team2) {
+                                                return '<td style="padding: 15px; text-align: center; background: #f8f9fa; color: #999;">-</td>';
+                                            } else {
+                                                const scores = match.scores?.[team1]?.sets || {};
+                                                return `
+                                                    <td style="padding: 15px; text-align: center;">
+                                                        <div style="display: flex; flex-direction: column; gap: 5px; align-items: center;">
+                                                            <div style="display: flex; align-items: center; gap: 5px;">
+                                                                <span style="font-size: 0.8rem; color: #666;">1:</span>
+                                                                <input type="text" 
+                                                                       id="score_${matchId}_${team1}_vs_${team2}_set1"
+                                                                       placeholder="0:0"
+                                                                       value="${scores[1] || ''}"
+                                                                       style="width: 60px; padding: 6px; text-align: center; border: 2px solid #e0e0e0; border-radius: 5px;"
+                                                                       onchange="updateSetScore('${matchId}', '${team1}', '${team2}', 1, this.value)">
+                                                            </div>
+                                                            <div style="display: flex; align-items: center; gap: 5px;">
+                                                                <span style="font-size: 0.8rem; color: #666;">2:</span>
+                                                                <input type="text" 
+                                                                       id="score_${matchId}_${team1}_vs_${team2}_set2"
+                                                                       placeholder="0:0"
+                                                                       value="${scores[2] || ''}"
+                                                                       style="width: 60px; padding: 6px; text-align: center; border: 2px solid #e0e0e0; border-radius: 5px;"
+                                                                       onchange="updateSetScore('${matchId}', '${team1}', '${team2}', 2, this.value)">
+                                                            </div>
+                                                            <div style="display: flex; align-items: center; gap: 5px;">
+                                                                <span style="font-size: 0.8rem; color: #666;">3:</span>
+                                                                <input type="text" 
+                                                                       id="score_${matchId}_${team1}_vs_${team2}_set3"
+                                                                       placeholder="0:0"
+                                                                       value="${scores[3] || ''}"
+                                                                       style="width: 60px; padding: 6px; text-align: center; border: 2px solid #e0e0e0; border-radius: 5px;"
+                                                                       onchange="updateSetScore('${matchId}', '${team1}', '${team2}', 3, this.value)">
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                `;
+                                            }
+                                        }).join('')}
+                                        <td style="padding: 15px; text-align: center;">
+                                            <input type="number" 
+                                                   id="points_${matchId}_${team1}"
+                                                   placeholder="0"
+                                                   min="0"
+                                                   value="${match.scores?.[team1]?.points || 0}"
+                                                   style="width: 70px; padding: 8px; text-align: center; border: 2px solid #e0e0e0; border-radius: 5px; font-weight: bold; color: #1e3c72;"
+                                                   onchange="updateTeamPoints('${matchId}', '${team1}', this.value)">
+                                        </td>
+                                        <td style="padding: 15px; text-align: center; font-weight: bold; font-size: 1.2rem;" id="rank_${matchId}_${team1}">
+                                            ${rowIndex + 1}
+                                        </td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div style="margin-top: 30px; display: flex; gap: 10px;">
+                    <button onclick="calculateClassicStandings('${matchId}')" class="btn-primary">Подсчитать места</button>
+                    <button onclick="finishClassicMatch('${matchId}')" class="btn-success">Завершить матч</button>
+                </div>
+            </div>
+        `;
+        
+        container.innerHTML = html;
+        
+    } catch (error) {
+        console.error('Ошибка создания матча:', error);
+        alert(`Ошибка создания матча: ${error.message}`);
+    }
+};
+
+// =========== ФОРМА ИГРЫ НА ОЧКИ ===========
+
+function showPointsMatchForm() {
+    const container = document.getElementById('match-creation-form');
+    container.style.display = 'block';
+    
+    container.innerHTML = `
+        <h4 style="color: #1e3c72; margin-bottom: 20px;">Создать игру на очки</h4>
+        
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+            <div style="display: flex; gap: 20px; margin-bottom: 20px;">
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                    <input type="radio" name="points-type" value="players" checked onclick="togglePointsType('players')">
+                    <span style="font-weight: bold;">1 на 1 (игроки)</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                    <input type="radio" name="points-type" value="teams" onclick="togglePointsType('teams')">
+                    <span style="font-weight: bold;">Команды</span>
+                </label>
+            </div>
+            
+            <div id="points-players-selection" style="display: block;">
+                <p style="margin-bottom: 15px;"><strong>Выберите игроков для турнира:</strong></p>
+                <div id="players-points-selection" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; max-height: 400px; overflow-y: auto; padding: 10px; background: white; border-radius: 10px;">
+                    ${allPlayers.map(player => `
+                        <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e0e0e0;">
+                            <input type="checkbox" value="${player.id}" data-name="${player.name}" class="player-points-checkbox" style="width: 18px; height: 18px;">
+                            <img src="${player.photo || 'images/default-player.png'}" 
+                                 style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover;">
+                            <span style="font-size: 0.95rem;">${player.name}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            
+            <div id="points-teams-selection" style="display: none;">
+                <p style="margin-bottom: 15px;"><strong>Выберите команды для турнира:</strong></p>
+                <div id="teams-points-selection" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; max-height: 400px; overflow-y: auto; padding: 10px; background: white; border-radius: 10px;">
+                    ${Object.keys(allTeams).map(teamName => {
+                        const team = allTeams[teamName];
+                        const players = Array.isArray(team?.players) ? team.players : [];
+                        return `
+                            <div class="team-selection-card" style="border: 2px solid #e0e0e0; border-radius: 10px; padding: 15px; cursor: pointer; transition: all 0.3s ease;">
+                                <div style="display: flex; align-items: center; gap: 15px;">
+                                    <input type="checkbox" value="${teamName}" class="team-points-checkbox" style="width: 20px; height: 20px;">
+                                    <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                                        ${players.slice(0, 3).map(player => `
+                                            <img src="${player.photo || 'images/default-player.png'}" 
+                                                 style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover; border: 2px solid #1e3c72;">
+                                        `).join('')}
+                                        ${players.length > 3 ? `<span style="background: #1e3c72; color: white; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem;">+${players.length - 3}</span>` : ''}
+                                    </div>
+                                    <span style="font-size: 0.95rem; font-weight: bold; color: #1e3c72;">${teamName}</span>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        </div>
+        
+        <div style="margin: 20px 0;">
+            <label style="display: block; margin-bottom: 8px; font-weight: bold;">Название турнира:</label>
+            <input type="text" id="points-match-description" placeholder="Например: Турнир по волейболу" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px;">
+        </div>
+        
+        <div style="margin: 20px 0;">
+            <label style="display: block; margin-bottom: 8px; font-weight: bold;">Количество партий:</label>
+            <select id="points-match-sets" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px;">
+                <option value="1">1 партия</option>
+                <option value="2">2 партии</option>
+                <option value="3" selected>3 партии</option>
+                <option value="4">4 партии</option>
+                <option value="5">5 партий</option>
+            </select>
+        </div>
+        
+        <div class="match-actions">
+            <button onclick="generatePointsMatch()" class="btn-primary" style="padding: 12px 30px;">Создать таблицу</button>
+            <button onclick="showCreateMatch()" class="btn-secondary">Назад</button>
+        </div>
+        
+        <div id="points-match-container" style="margin-top: 30px;"></div>
+    `;
+    
+    document.querySelectorAll('.team-selection-card').forEach(card => {
+        card.addEventListener('click', function(e) {
+            if (e.target.tagName !== 'INPUT') {
+                const checkbox = this.querySelector('.team-points-checkbox');
+                checkbox.checked = !checkbox.checked;
+                if (checkbox.checked) {
+                    this.style.borderColor = '#1e3c72';
+                    this.style.backgroundColor = '#f0f4ff';
+                } else {
+                    this.style.borderColor = '#e0e0e0';
+                    this.style.backgroundColor = 'transparent';
+                }
+            }
+        });
+    });
+}
+
+window.togglePointsType = (type) => {
+    const playersDiv = document.getElementById('points-players-selection');
+    const teamsDiv = document.getElementById('points-teams-selection');
+    
+    if (type === 'players') {
+        playersDiv.style.display = 'block';
+        teamsDiv.style.display = 'none';
+    } else {
+        playersDiv.style.display = 'none';
+        teamsDiv.style.display = 'block';
+    }
+};
+
+// =========== ФУНКЦИИ ДЛЯ РАБОТЫ С ИГРОЙ НА ОЧКИ ===========
+
+window.updatePointsScore = (matchId, participantId, value) => {
+    recalculateParticipantTotal(matchId, participantId);
+};
+
+function recalculateParticipantTotal(matchId, participantId) {
+    const match = allMatches.find(m => m.id === matchId);
+    if (!match) return 0;
+    
+    let total = 0;
+    const participants = match.participants || match.players?.map(p => ({ id: p.id })) || [];
+    
+    participants.forEach(opponent => {
+        if (opponent.id !== participantId) {
+            for (let setIndex = 0; setIndex < match.sets; setIndex++) {
+                const inputId = `points_${matchId}_${participantId}_vs_${opponent.id}_set${setIndex}`;
+                const input = document.getElementById(inputId);
+                if (input) {
+                    const value = parseInt(input.value) || 0;
+                    total += value;
+                    
+                    if (!match.points[participantId]) {
+                        match.points[participantId] = { total: 0, sets: new Array(match.sets).fill(0) };
+                    }
+                    if (!match.points[participantId].sets) {
+                        match.points[participantId].sets = new Array(match.sets).fill(0);
+                    }
+                    match.points[participantId].sets[setIndex] = value;
+                }
+            }
+        }
+    });
+    
+    if (!match.points[participantId]) {
+        match.points[participantId] = { total: 0, sets: new Array(match.sets).fill(0) };
+    }
+    match.points[participantId].total = total;
+    
+    const totalElement = document.getElementById(`total_${matchId}_${participantId}`);
+    if (totalElement) {
+        totalElement.textContent = total;
+    }
+    
+    DataManager.saveMatch(match);
+    return total;
+}
+
+window.recalculatePlayerTotals = (matchId) => {
+    const match = allMatches.find(m => m.id === matchId);
+    if (!match) return;
+    
+    const participants = match.participants || match.players || [];
+    participants.forEach(participant => {
+        recalculateParticipantTotal(matchId, participant.id);
+    });
+    
+    alert('Очки всех участников пересчитаны!');
+};
+
+window.calculatePointsStandings = (matchId) => {
+    const match = allMatches.find(m => m.id === matchId);
+    if (!match) return;
+    
+    const participants = match.participants || match.players || [];
+    
+    participants.forEach(participant => {
+        recalculateParticipantTotal(matchId, participant.id);
+    });
+    
+    const standings = participants.map(participant => {
+        const participantPoints = match.points[participant.id] || { total: 0 };
+        return {
+            id: participant.id,
+            name: participant.name,
+            total: participantPoints.total
+        };
+    });
+    
+    standings.sort((a, b) => b.total - a.total);
+    
+    standings.forEach((participant, index) => {
+        const rankElement = document.getElementById(`rank_${matchId}_${participant.id}`);
+        if (rankElement) {
+            rankElement.textContent = index + 1;
+            if (index === 0) {
+                rankElement.style.color = '#ffd700';
+                rankElement.style.fontWeight = 'bold';
+            } else if (index === 1) {
+                rankElement.style.color = '#c0c0c0';
+                rankElement.style.fontWeight = 'bold';
+            } else if (index === 2) {
+                rankElement.style.color = '#cd7f32';
+                rankElement.style.fontWeight = 'bold';
+            } else {
+                rankElement.style.color = '#666';
+                rankElement.style.fontWeight = 'normal';
+            }
+        }
+    });
+    
+    match.standings = standings;
+    DataManager.saveMatch(match);
+    
+    alert('Места подсчитаны!');
+};
+
+window.finishPointsMatch = async (matchId) => {
+    if (!confirm('Завершить турнир?')) return;
+    
+    const match = allMatches.find(m => m.id === matchId);
+    if (!match) return;
+    
+    recalculatePlayerTotals(matchId);
+    calculatePointsStandings(matchId);
+    
+    match.status = 'completed';
+    match.completedAt = new Date().toLocaleString();
+    
+    await DataManager.saveMatch(match);
+    
+    alert('Турнир завершен!');
+    showEditMatches();
+};
+
+// =========== ГЕНЕРАЦИЯ ИГРЫ НА ОЧКИ ===========
+
+window.generatePointsMatch = async () => {
+    const isTeamsMode = document.querySelector('input[name="points-type"]:checked')?.value === 'teams';
+    
+    let participants = [];
+    let participantsType = isTeamsMode ? 'teams' : 'players';
+    
+    if (isTeamsMode) {
+        participants = Array.from(document.querySelectorAll('.team-points-checkbox:checked'))
+            .map(cb => ({
+                id: cb.value,
+                name: cb.value,
+                type: 'team',
+                players: allTeams[cb.value]?.players || []
+            }));
+    } else {
+        participants = Array.from(document.querySelectorAll('.player-points-checkbox:checked'))
+            .map(cb => ({
+                id: cb.value,
+                name: cb.dataset.name,
+                type: 'player',
+                players: [allPlayers.find(p => p.id === cb.value)]
+            }));
+    }
+    
+    const description = document.getElementById('points-match-description').value.trim() || 
+                       `Турнир ${new Date().toLocaleDateString()}`;
+    const numberOfSets = parseInt(document.getElementById('points-match-sets').value);
+    
+    if (participants.length < 2) {
+        alert(`Выберите минимум 2 ${isTeamsMode ? 'команды' : 'игроков'}`);
+        return;
+    }
+    
+    const container = document.getElementById('points-match-container');
+    
+    const match = {
+        description: description,
+        matchType: 'points',
+        participantsType: participantsType,
+        participants: participants,
+        teams: participants.map(p => p.name),
+        players: participantsType === 'players' ? participants : [],
+        date: new Date().toLocaleString(),
+        timestamp: Date.now(),
+        status: 'active',
+        sets: numberOfSets,
+        points: {},
+        scores: {},
+        standings: []
+    };
+    
+    participants.forEach(participant => {
+        match.points[participant.id] = {
+            total: 0,
+            sets: new Array(numberOfSets).fill(0),
+            name: participant.name,
+            type: participant.type
+        };
+    });
+    
+    try {
+        const matchId = await DataManager.saveMatch(match);
+        match.id = matchId;
+        allMatches.push(match);
+        
+        let html = `
+            <div style="background: white; border-radius: 15px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); margin-top: 20px;">
+                <h4 style="color: #1e3c72; margin-bottom: 15px;">${description}</h4>
+                <p style="color: #666; margin-bottom: 20px;">
+                    Игра на очки • ${numberOfSets} партий • 
+                    ${participantsType === 'teams' ? 'Команды' : '1 на 1'}
+                </p>
+                
+                <div class="table-responsive">
+                    <table class="match-table" style="width: 100%; border-collapse: collapse; border: 1px solid #dee2e6;">
+                        <thead>
+                            <tr>
+                                <th style="background: #1e3c72; color: white; padding: 15px; text-align: left;">
+                                    ${participantsType === 'teams' ? 'Команды' : 'Игроки'}
+                                </th>
+                                ${participants.map(participant => {
+                                    if (participant.type === 'team') {
+                                        const teamPlayers = participant.players || [];
+                                        return `
+                                            <th style="background: #2a5298; color: white; padding: 15px; text-align: center; min-width: 150px;">
+                                                <div style="display: flex; flex-direction: column; align-items: center; gap: 5px;">
+                                                    <div style="display: flex; gap: 5px; justify-content: center;">
+                                                        ${teamPlayers.slice(0, 3).map(player => `
+                                                            <img src="${player.photo || 'images/default-player.png'}" 
+                                                                 style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover; border: 2px solid white;">
+                                                        `).join('')}
+                                                        ${teamPlayers.length > 3 ? `<span style="background: rgba(255,255,255,0.2); padding: 5px 8px; border-radius: 15px; font-size: 0.7rem;">+${teamPlayers.length - 3}</span>` : ''}
+                                                    </div>
+                                                    <span style="font-size: 0.9rem; font-weight: bold;">${participant.name}</span>
+                                                </div>
+                                            </th>
+                                        `;
+                                    } else {
+                                        const playerData = allPlayers.find(p => p.id === participant.id) || participant;
+                                        return `
+                                            <th style="background: #2a5298; color: white; padding: 15px; text-align: center; min-width: 100px;">
+                                                <div style="display: flex; flex-direction: column; align-items: center; gap: 5px;">
+                                                    <img src="${playerData.photo || 'images/default-player.png'}" 
+                                                         style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid white;">
+                                                    <span style="font-size: 0.9rem;">${participant.name}</span>
+                                                </div>
+                                            </th>
+                                        `;
+                                    }
+                                }).join('')}
+                                <th style="background: #1e3c72; color: white; padding: 15px; text-align: center; min-width: 100px;">Всего очков</th>
+                                <th style="background: #1e3c72; color: white; padding: 15px; text-align: center; min-width: 60px;">Место</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${participants.map(participant1 => {
+                                return `
+                                    <tr style="border-bottom: 1px solid #dee2e6;">
+                                        <td style="padding: 15px; background: #f8f9fa; font-weight: bold;">
+                                            ${participant1.type === 'team' ? `
+                                                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                                    ${participant1.players.slice(0, 3).map(player => `
+                                                        <img src="${player.photo || 'images/default-player.png'}" 
+                                                             style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover; border: 2px solid #1e3c72;">
+                                                    `).join('')}
+                                                    ${participant1.players.length > 3 ? `<span style="background: #1e3c72; color: white; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem;">+${participant1.players.length - 3}</span>` : ''}
+                                                    <span style="color: #1e3c72;">${participant1.name}</span>
+                                                </div>
+                                            ` : `
+                                                <div style="display: flex; align-items: center; gap: 10px;">
+                                                    <img src="${(allPlayers.find(p => p.id === participant1.id)?.photo) || 'images/default-player.png'}" 
+                                                         style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #1e3c72;">
+                                                    <span style="color: #1e3c72;">${participant1.name}</span>
+                                                </div>
+                                            `}
+                                        </td>
+                                        ${participants.map(participant2 => {
+                                            if (participant1.id === participant2.id) {
+                                                return '<td style="padding: 15px; text-align: center; background: #f8f9fa; color: #999;">-</td>';
+                                            } else {
+                                                let setInputs = '';
+                                                for (let i = 0; i < numberOfSets; i++) {
+                                                    setInputs += `
+                                                        <div style="display: flex; align-items: center; gap: 5px; margin: 2px 0;">
+                                                            <span style="font-size: 0.7rem; color: #666;">${i + 1}:</span>
+                                                            <input type="number" 
+                                                                   id="points_${matchId}_${participant1.id}_vs_${participant2.id}_set${i}"
+                                                                   placeholder="0"
+                                                                   min="0"
+                                                                   value="0"
+                                                                   style="width: 50px; padding: 6px; text-align: center; border: 2px solid #e0e0e0; border-radius: 5px;"
+                                                                   onchange="updatePointsScore('${matchId}', '${participant1.id}', this.value)">
+                                                        </div>
+                                                    `;
+                                                }
+                                                return `<td style="padding: 15px; text-align: center;">${setInputs}</td>`;
+                                            }
+                                        }).join('')}
+                                        <td style="padding: 15px; text-align: center; font-weight: bold; color: #1e3c72; font-size: 1.2rem;" id="total_${matchId}_${participant1.id}">
+                                            0
+                                        </td>
+                                        <td style="padding: 15px; text-align: center; font-weight: bold; font-size: 1.2rem;" id="rank_${matchId}_${participant1.id}">
+                                            ${participants.indexOf(participant1) + 1}
+                                        </td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div style="margin-top: 30px; display: flex; gap: 10px;">
+                    <button onclick="recalculatePlayerTotals('${matchId}')" class="btn-primary">Пересчитать очки</button>
+                    <button onclick="calculatePointsStandings('${matchId}')" class="btn-primary">Подсчитать места</button>
+                    <button onclick="finishPointsMatch('${matchId}')" class="btn-success">Завершить турнир</button>
+                </div>
+            </div>
+        `;
+        
+        container.innerHTML = html;
+        
+    } catch (error) {
+        alert(`Ошибка создания турнира: ${error.message}`);
+    }
+};
+
+// =========== ОТОБРАЖЕНИЕ КЛАССИЧЕСКОГО МАТЧА ===========
+
+function displayClassicMatch(match) {
+    const matchDate = match.date || new Date(match.timestamp).toLocaleDateString('ru-RU');
+    
+    let html = `
+        <div class="match-card">
+            <div class="match-header">
+                <div>
+                    <h3>${match.description || 'Волейбольный матч'}</h3>
+                    <span style="background: #28a745; color: white; padding: 3px 10px; border-radius: 15px; font-size: 0.8rem; margin-left: 10px;">🏐 Классический</span>
+                </div>
+                <span class="match-date">${matchDate}</span>
+            </div>
+            
+            <div class="match-table-container">
+                <table class="match-results-table">
+                    <thead>
+                        <tr>
+                            <th style="min-width: 250px;">Команда / Игроки</th>
+                            ${(match.teams || []).map(teamName => {
+                                const teamPlayers = allTeams[teamName]?.players || [];
+                                return `
+                                    <th style="min-width: 180px; text-align: center;">
+                                        <div style="display: flex; flex-direction: column; align-items: center; gap: 5px;">
+                                            <div style="display: flex; gap: 5px; justify-content: center;">
+                                                ${teamPlayers.slice(0, 3).map(player => `
+                                                    <img src="${player.photo || 'images/default-player.png'}" 
+                                                         style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover; border: 2px solid white;">
+                                                `).join('')}
+                                                ${teamPlayers.length > 3 ? `<span style="background: rgba(255,255,255,0.2); padding: 5px 8px; border-radius: 15px; font-size: 0.7rem;">+${teamPlayers.length - 3}</span>` : ''}
+                                            </div>
+                                            <span style="font-size: 0.8rem; font-weight: bold;">${teamName}</span>
+                                        </div>
+                                    </th>
+                                `;
+                            }).join('')}
+                            <th style="text-align: center; min-width: 80px;">Очки</th>
+                            <th style="text-align: center; min-width: 60px;">Место</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${(match.teams || []).map(team1 => {
+                            const team1Players = allTeams[team1]?.players || [];
+                            const totalPoints = match.scores?.[team1]?.points || 0;
+                            const rank = match.standings?.findIndex(t => t.name === team1) + 1 || match.teams.indexOf(team1) + 1;
+                            
+                            return `
+                                <tr>
+                                    <td>
+                                        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                            ${team1Players.slice(0, 3).map(player => `
+                                                <img src="${player.photo || 'images/default-player.png'}" 
+                                                     style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover; border: 2px solid #1e3c72;">
+                                            `).join('')}
+                                            ${team1Players.length > 3 ? `<span style="background: #1e3c72; color: white; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem;">+${team1Players.length - 3}</span>` : ''}
+                                            <span style="font-weight: bold; color: #1e3c72;">${team1}</span>
+                                        </div>
+                                    </td>
+                                    ${(match.teams || []).map(team2 => {
+                                        if (team1 === team2) {
+                                            return '<td style="text-align: center; background: #f8f9fa; color: #999;">-</td>';
+                                        } else {
+                                            const scores = match.scores?.[team1]?.sets || {};
+                                            return `
+                                                <td style="text-align: center;">
+                                                    <div style="display: flex; flex-direction: column; gap: 3px; align-items: center;">
+                                                        <div style="display: flex; align-items: center; gap: 5px; justify-content: center;">
+                                                            <span style="font-size: 0.8rem; color: #666;">1:</span>
+                                                            <span style="font-weight: bold;">${scores[1] || '0:0'}</span>
+                                                        </div>
+                                                        <div style="display: flex; align-items: center; gap: 5px; justify-content: center;">
+                                                            <span style="font-size: 0.8rem; color: #666;">2:</span>
+                                                            <span style="font-weight: bold;">${scores[2] || '0:0'}</span>
+                                                        </div>
+                                                        <div style="display: flex; align-items: center; gap: 5px; justify-content: center;">
+                                                            <span style="font-size: 0.8rem; color: #666;">3:</span>
+                                                            <span style="font-weight: bold;">${scores[3] || '0:0'}</span>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            `;
+                                        }
+                                    }).join('')}
+                                    <td style="text-align: center; font-weight: bold; color: #1e3c72;">
+                                        ${totalPoints}
+                                    </td>
+                                    <td style="text-align: center; font-weight: bold;
+                                        ${rank === 1 ? 'color: #ffd700;' : 
+                                          rank === 2 ? 'color: #c0c0c0;' : 
+                                          rank === 3 ? 'color: #cd7f32;' : ''}">
+                                        ${rank}
+                                    </td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="match-footer">
+                <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                    <div><strong>Команд:</strong> ${match.teams?.length || 0}</div>
+                    <div><strong>Победитель:</strong> <span style="color: #ffd700; font-weight: bold;">${match.standings?.[0]?.name || ''}</span></div>
+                    <div><strong>Очки победителя:</strong> ${match.scores?.[match.standings?.[0]?.name]?.points || 0}</div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    return html;
+}
+
+function displayPointsMatch(match) {
+    const matchDate = match.date || new Date(match.timestamp).toLocaleDateString('ru-RU');
+    const isTeamsMode = match.participantsType === 'teams';
+    const participants = match.participants || match.players?.map(p => ({ 
+        id: p.id, 
+        name: p.name, 
+        type: 'player',
+        players: [allPlayers.find(pl => pl.id === p.id)]
+    })) || [];
+    
+    let html = `
+        <div class="match-card">
+            <div class="match-header">
+                <div>
+                    <h3>${match.description || 'Турнир'}</h3>
+                    <span style="background: #ffd700; color: #1e3c72; padding: 3px 10px; border-radius: 15px; font-size: 0.8rem; margin-left: 10px;">
+                        🎯 Игра на очки • ${isTeamsMode ? 'Команды' : '1 на 1'}
+                    </span>
+                </div>
+                <span class="match-date">${matchDate}</span>
+            </div>
+            
+            <div class="match-table-container">
+                <table class="match-results-table">
+                    <thead>
+                        <tr>
+                            <th style="min-width: 250px;">${isTeamsMode ? 'Команды' : 'Игроки'}</th>
+                            ${participants.map(participant => {
+                                if (isTeamsMode) {
+                                    const teamData = allTeams[participant.name] || { players: [] };
+                                    return `
+                                        <th style="text-align: center; min-width: 120px;">
+                                            <div style="display: flex; flex-direction: column; align-items: center; gap: 5px;">
+                                                <div style="display: flex; gap: 5px; justify-content: center;">
+                                                    ${teamData.players.slice(0, 3).map(player => `
+                                                        <img src="${player.photo || 'images/default-player.png'}" 
+                                                             style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover; border: 2px solid white;">
+                                                    `).join('')}
+                                                    ${teamData.players.length > 3 ? `<span style="background: rgba(255,255,255,0.2); padding: 5px 8px; border-radius: 15px; font-size: 0.7rem;">+${teamData.players.length - 3}</span>` : ''}
+                                                </div>
+                                                <span style="font-size: 0.8rem; font-weight: bold;">${participant.name}</span>
+                                            </div>
+                                        </th>
+                                    `;
+                                } else {
+                                    const playerData = allPlayers.find(p => p.id === participant.id) || participant;
+                                    return `
+                                        <th style="text-align: center; min-width: 100px;">
+                                            <div style="display: flex; flex-direction: column; align-items: center; gap: 5px;">
+                                                <img src="${playerData.photo || 'images/default-player.png'}" 
+                                                     style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover; border: 2px solid white;">
+                                                <span style="font-size: 0.8rem;">${participant.name.split(' ')[0]}</span>
+                                            </div>
+                                        </th>
+                                    `;
+                                }
+                            }).join('')}
+                            <th style="text-align: center; min-width: 80px;">Всего очков</th>
+                            <th style="text-align: center; min-width: 60px;">Место</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${participants.map(participant1 => {
+                            let totalPoints = match.points?.[participant1.id]?.total || 0;
+                            const rank = match.standings?.findIndex(p => p.id === participant1.id) + 1 || participants.indexOf(participant1) + 1;
+                            
+                            return `
+                                <tr>
+                                    <td style="display: flex; align-items: center; gap: 10px; padding: 10px;">
+                                        ${isTeamsMode ? `
+                                            <div style="display: flex; align-items: center; gap: 10px;">
+                                                ${(allTeams[participant1.name]?.players || []).slice(0, 3).map(player => `
+                                                    <img src="${player.photo || 'images/default-player.png'}" 
+                                                         style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover; border: 2px solid #1e3c72;">
+                                                `).join('')}
+                                                <span style="font-weight: bold; color: #1e3c72;">${participant1.name}</span>
+                                            </div>
+                                        ` : `
+                                            <img src="${(allPlayers.find(p => p.id === participant1.id)?.photo) || 'images/default-player.png'}" 
+                                                 style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #1e3c72;">
+                                            <span style="font-weight: bold; color: #1e3c72;">${participant1.name}</span>
+                                        `}
+                                    </td>
+                                    ${participants.map(participant2 => {
+                                        if (participant1.id === participant2.id) {
+                                            return '<td style="text-align: center; background: #f8f9fa; color: #999;">-</td>';
+                                        } else {
+                                            const scores = [];
+                                            for (let i = 0; i < (match.sets || 1); i++) {
+                                                const score = match.points?.[participant1.id]?.sets?.[i] || 0;
+                                                scores.push(score);
+                                            }
+                                            return `<td style="text-align: center; font-weight: bold;">${scores.join(' | ') || '0'}</td>`;
+                                        }
+                                    }).join('')}
+                                    <td style="text-align: center; font-weight: bold; color: #1e3c72;">
+                                        ${totalPoints}
+                                    </td>
+                                    <td style="text-align: center; font-weight: bold; 
+                                        ${rank === 1 ? 'color: #ffd700;' : 
+                                          rank === 2 ? 'color: #c0c0c0;' : 
+                                          rank === 3 ? 'color: #cd7f32;' : ''}">
+                                        ${rank}
+                                    </td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="match-footer">
+                <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                    <div><strong>Участников:</strong> ${participants.length}</div>
+                    <div><strong>Партий:</strong> ${match.sets || 1}</div>
+                    <div><strong>Победитель:</strong> <span style="color: #ffd700; font-weight: bold;">${match.standings?.[0]?.name || ''}</span></div>
+                    <div><strong>Очки победителя:</strong> ${match.standings?.[0]?.total || 0}</div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    return html;
+}
+
+// =========== РЕДАКТИРОВАНИЕ МАТЧЕЙ ===========
+
 window.showEditMatches = async () => {
     if (!isAdmin) {
         alert('Доступ только для администраторов');
@@ -1257,15 +2060,19 @@ window.showEditMatches = async () => {
                                 <span class="match-date" style="color: #666; font-size: 0.9rem;">${match.date || new Date(match.timestamp).toLocaleDateString()}</span>
                             </div>
                             <div class="match-edit-info" style="margin-bottom: 15px;">
-                                <p style="margin: 5px 0;"><strong>Команды:</strong> ${match.teams.join(', ')}</p>
+                                <p style="margin: 5px 0;"><strong>Тип:</strong> ${match.matchType === 'points' ? '🎯 Игра на очки' : '🏐 Классический'}</p>
+                                <p style="margin: 5px 0;"><strong>Участники:</strong> ${match.teams?.join(', ') || match.players?.map(p => p.name).join(', ') || ''}</p>
                                 <p style="margin: 5px 0;"><strong>Статус:</strong> ${match.status === 'completed' ? 'Завершен' : 'Активный'}</p>
+                                ${match.status === 'completed' ? 
+                                    `<p style="margin: 5px 0;"><strong>Победитель:</strong> ${match.standings?.[0]?.name || ''}</p>` : 
+                                    ''}
                             </div>
                             <div class="match-edit-actions" style="display: flex; gap: 10px; flex-wrap: wrap;">
                                 <button onclick="editMatch('${match.id}')" class="admin-btn">Редактировать</button>
                                 <button onclick="deleteMatch('${match.id}')" class="btn-delete">Удалить</button>
                                 ${match.status === 'completed' ? 
                                     `<button onclick="reopenMatch('${match.id}')" class="btn-warning">Возобновить</button>` : 
-                                    `<button onclick="finishMatchFromEdit('${match.id}')" class="btn-success">Завершить</button>`
+                                    `<button onclick="finishMatch('${match.id}')" class="btn-success">Завершить</button>`
                                 }
                             </div>
                         </div>
@@ -1278,7 +2085,6 @@ window.showEditMatches = async () => {
     }
 };
 
-// Редактировать конкретный матч
 window.editMatch = async (matchId) => {
     const match = allMatches.find(m => m.id === matchId);
     
@@ -1288,22 +2094,287 @@ window.editMatch = async (matchId) => {
     }
     
     const area = document.getElementById('admin-area');
-    area.innerHTML = `
-        <h3 style="color: #1e3c72;">Редактирование матча</h3>
-        <p><strong>${match.description || 'Матч'}</strong> (${match.date || new Date(match.timestamp).toLocaleDateString()})</p>
-        
-        <div id="match-edit-container" style="margin-top: 20px;"></div>
-        
-        <div style="margin-top: 20px;">
-            <button onclick="showEditMatches()" class="btn-secondary">Вернуться к списку матчей</button>
-        </div>
-    `;
     
-    // Генерируем таблицу в правильном контейнере
-    await generateMatchTableHTML(match.teams, match.id, match.description, 'match-edit-container');
+    if (match.matchType === 'points') {
+        area.innerHTML = `
+            <h3 style="color: #1e3c72;">Редактирование игры на очки</h3>
+            <p><strong>${match.description || 'Турнир'}</strong> (${match.date || new Date(match.timestamp).toLocaleDateString()})</p>
+            
+            <div id="points-match-container" style="margin-top: 20px;"></div>
+            
+            <div style="margin-top: 20px;">
+                <button onclick="showEditMatches()" class="btn-secondary">Вернуться к списку</button>
+            </div>
+        `;
+        
+        const container = document.getElementById('points-match-container');
+        
+        let html = `
+            <div style="background: white; border-radius: 15px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+                <h4 style="color: #1e3c72; margin-bottom: 15px;">${match.description}</h4>
+                <p style="color: #666; margin-bottom: 20px;">Редактирование • ${match.sets || 1} партий</p>
+                
+                <div class="table-responsive">
+                    <table class="match-table" style="width: 100%; border-collapse: collapse; border: 1px solid #dee2e6;">
+                        <thead>
+                            <tr>
+                                <th style="background: #1e3c72; color: white; padding: 15px; text-align: left;">
+                                    ${match.participantsType === 'teams' ? 'Команды' : 'Игроки'}
+                                </th>
+                                ${(match.participants || match.players || []).map(participant => {
+                                    if (match.participantsType === 'teams') {
+                                        const teamPlayers = allTeams[participant.name]?.players || [];
+                                        return `
+                                            <th style="background: #2a5298; color: white; padding: 15px; text-align: center;">
+                                                <div style="display: flex; flex-direction: column; align-items: center; gap: 5px;">
+                                                    <div style="display: flex; gap: 5px; justify-content: center;">
+                                                        ${teamPlayers.slice(0, 3).map(player => `
+                                                            <img src="${player.photo || 'images/default-player.png'}" 
+                                                                 style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover; border: 2px solid white;">
+                                                        `).join('')}
+                                                        ${teamPlayers.length > 3 ? `<span style="background: rgba(255,255,255,0.2); padding: 5px 8px; border-radius: 15px; font-size: 0.7rem;">+${teamPlayers.length - 3}</span>` : ''}
+                                                    </div>
+                                                    <span style="font-size: 0.9rem; font-weight: bold;">${participant.name}</span>
+                                                </div>
+                                            </th>
+                                        `;
+                                    } else {
+                                        const playerData = allPlayers.find(p => p.id === participant.id) || participant;
+                                        return `
+                                            <th style="background: #2a5298; color: white; padding: 15px; text-align: center;">
+                                                <div style="display: flex; flex-direction: column; align-items: center; gap: 5px;">
+                                                    <img src="${playerData.photo || 'images/default-player.png'}" 
+                                                         style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid white;">
+                                                    <span style="font-size: 0.9rem;">${participant.name}</span>
+                                                </div>
+                                            </th>
+                                        `;
+                                    }
+                                }).join('')}
+                                <th style="background: #1e3c72; color: white; padding: 15px; text-align: center;">Всего очков</th>
+                                <th style="background: #1e3c72; color: white; padding: 15px; text-align: center;">Место</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${(match.participants || match.players || []).map(participant1 => {
+                                return `
+                                    <tr style="border-bottom: 1px solid #dee2e6;">
+                                        <td style="padding: 15px; background: #f8f9fa; font-weight: bold;">
+                                            ${match.participantsType === 'teams' ? `
+                                                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                                    ${(allTeams[participant1.name]?.players || []).slice(0, 3).map(player => `
+                                                        <img src="${player.photo || 'images/default-player.png'}" 
+                                                             style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover; border: 2px solid #1e3c72;">
+                                                    `).join('')}
+                                                    ${(allTeams[participant1.name]?.players || []).length > 3 ? `<span style="background: #1e3c72; color: white; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem;">+${allTeams[participant1.name]?.players.length - 3}</span>` : ''}
+                                                    <span style="color: #1e3c72;">${participant1.name}</span>
+                                                </div>
+                                            ` : `
+                                                <div style="display: flex; align-items: center; gap: 10px;">
+                                                    <img src="${(allPlayers.find(p => p.id === participant1.id)?.photo) || 'images/default-player.png'}" 
+                                                         style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #1e3c72;">
+                                                    <span style="color: #1e3c72;">${participant1.name}</span>
+                                                </div>
+                                            `}
+                                        </td>
+                                        ${(match.participants || match.players || []).map(participant2 => {
+                                            if (participant1.id === participant2.id) {
+                                                return '<td style="padding: 15px; text-align: center; background: #f8f9fa; color: #999;">-</td>';
+                                            } else {
+                                                let setInputs = '';
+                                                for (let i = 0; i < (match.sets || 1); i++) {
+                                                    const score = match.points?.[participant1.id]?.sets?.[i] || 0;
+                                                    setInputs += `
+                                                        <div style="display: flex; align-items: center; gap: 5px; margin: 2px 0;">
+                                                            <span style="font-size: 0.7rem; color: #666;">${i + 1}:</span>
+                                                            <input type="number" 
+                                                                   id="points_${matchId}_${participant1.id}_vs_${participant2.id}_set${i}"
+                                                                   placeholder="0"
+                                                                   min="0"
+                                                                   value="${score}"
+                                                                   style="width: 50px; padding: 6px; text-align: center; border: 2px solid #e0e0e0; border-radius: 5px;"
+                                                                   onchange="updatePointsScore('${matchId}', '${participant1.id}', this.value)">
+                                                        </div>
+                                                    `;
+                                                }
+                                                return `<td style="padding: 15px; text-align: center;">${setInputs}</td>`;
+                                            }
+                                        }).join('')}
+                                        <td style="padding: 15px; text-align: center; font-weight: bold; color: #1e3c72; font-size: 1.2rem;" id="total_${matchId}_${participant1.id}">
+                                            ${match.points?.[participant1.id]?.total || 0}
+                                        </td>
+                                        <td style="padding: 15px; text-align: center; font-weight: bold; font-size: 1.2rem;" id="rank_${matchId}_${participant1.id}">
+                                            ${match.standings?.findIndex(p => p.id === participant1.id) + 1 || (match.players?.indexOf(participant1) + 1) || 1}
+                                        </td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div style="margin-top: 30px; display: flex; gap: 10px;">
+                    <button onclick="recalculatePlayerTotals('${matchId}')" class="btn-primary">Пересчитать очки</button>
+                    <button onclick="calculatePointsStandings('${matchId}')" class="btn-primary">Подсчитать места</button>
+                    <button onclick="finishPointsMatch('${matchId}')" class="btn-success">Завершить турнир</button>
+                </div>
+            </div>
+        `;
+        
+        container.innerHTML = html;
+        
+    } else {
+        area.innerHTML = `
+            <h3 style="color: #1e3c72; margin-bottom: 20px;">Редактирование классического матча</h3>
+            <p style="margin-bottom: 20px;"><strong>${match.description || 'Матч'}</strong> (${match.date || new Date(match.timestamp).toLocaleDateString()})</p>
+            
+            <div id="classic-match-container" style="margin-top: 20px;"></div>
+            
+            <div style="margin-top: 20px; display: flex; gap: 10px;">
+                <button onclick="showEditMatches()" class="btn-secondary">Вернуться к списку</button>
+                <button onclick="saveClassicMatchChanges('${matchId}')" class="btn-success">Сохранить изменения</button>
+            </div>
+        `;
+        
+        const container = document.getElementById('classic-match-container');
+        
+        let html = `
+            <div style="background: white; border-radius: 15px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+                <h4 style="color: #1e3c72; margin-bottom: 15px;">${match.description}</h4>
+                <p style="color: #666; margin-bottom: 20px;">Редактирование матча • Ручной ввод очков</p>
+                
+                <div class="table-responsive">
+                    <table class="match-table" style="width: 100%; border-collapse: collapse; border: 1px solid #dee2e6;">
+                        <thead>
+                            <tr>
+                                <th style="background: #1e3c72; color: white; padding: 15px; text-align: left;">Команда / Игроки</th>
+                                ${(match.teams || []).map(teamName => {
+                                    const teamPlayers = allTeams[teamName]?.players || [];
+                                    return `
+                                        <th style="background: #2a5298; color: white; padding: 15px; text-align: center;">
+                                            <div style="display: flex; flex-direction: column; align-items: center; gap: 5px;">
+                                                <div style="display: flex; gap: 5px; justify-content: center;">
+                                                    ${teamPlayers.slice(0, 3).map(player => `
+                                                        <img src="${player.photo || 'images/default-player.png'}" 
+                                                             style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover; border: 2px solid white;">
+                                                    `).join('')}
+                                                    ${teamPlayers.length > 3 ? `<span style="background: rgba(255,255,255,0.2); padding: 5px 8px; border-radius: 15px; font-size: 0.7rem;">+${teamPlayers.length - 3}</span>` : ''}
+                                                </div>
+                                                <span style="font-size: 0.9rem; font-weight: bold;">${teamName}</span>
+                                            </div>
+                                        </th>
+                                    `;
+                                }).join('')}
+                                <th style="background: #1e3c72; color: white; padding: 15px; text-align: center; min-width: 80px;">Очки</th>
+                                <th style="background: #1e3c72; color: white; padding: 15px; text-align: center; min-width: 60px;">Место</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${(match.teams || []).map((team1, rowIndex) => {
+                                const team1Players = allTeams[team1]?.players || [];
+                                return `
+                                    <tr style="border-bottom: 1px solid #dee2e6;">
+                                        <td style="padding: 15px; background: #f8f9fa; font-weight: bold;">
+                                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                                ${team1Players.slice(0, 3).map(player => `
+                                                    <img src="${player.photo || 'images/default-player.png'}" 
+                                                         style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover; border: 2px solid #1e3c72;">
+                                                    `).join('')}
+                                                ${team1Players.length > 3 ? `<span style="background: #1e3c72; color: white; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem;">+${team1Players.length - 3}</span>` : ''}
+                                                <span style="color: #1e3c72;">${team1}</span>
+                                            </div>
+                                        </td>
+                                        ${(match.teams || []).map((team2, colIndex) => {
+                                            if (team1 === team2) {
+                                                return '<td style="padding: 15px; text-align: center; background: #f8f9fa; color: #999;">-</td>';
+                                            } else {
+                                                const scores = match.scores?.[team1]?.sets || {};
+                                                return `
+                                                    <td style="padding: 15px; text-align: center;">
+                                                        <div style="display: flex; flex-direction: column; gap: 5px; align-items: center;">
+                                                            <div style="display: flex; align-items: center; gap: 5px;">
+                                                                <span style="font-size: 0.8rem; color: #666;">1:</span>
+                                                                <input type="text" 
+                                                                       id="score_${matchId}_${team1}_vs_${team2}_set1"
+                                                                       placeholder="0:0"
+                                                                       value="${scores[1] || ''}"
+                                                                       style="width: 60px; padding: 6px; text-align: center; border: 2px solid #e0e0e0; border-radius: 5px;"
+                                                                       onchange="updateSetScore('${matchId}', '${team1}', '${team2}', 1, this.value)">
+                                                            </div>
+                                                            <div style="display: flex; align-items: center; gap: 5px;">
+                                                                <span style="font-size: 0.8rem; color: #666;">2:</span>
+                                                                <input type="text" 
+                                                                       id="score_${matchId}_${team1}_vs_${team2}_set2"
+                                                                       placeholder="0:0"
+                                                                       value="${scores[2] || ''}"
+                                                                       style="width: 60px; padding: 6px; text-align: center; border: 2px solid #e0e0e0; border-radius: 5px;"
+                                                                       onchange="updateSetScore('${matchId}', '${team1}', '${team2}', 2, this.value)">
+                                                            </div>
+                                                            <div style="display: flex; align-items: center; gap: 5px;">
+                                                                <span style="font-size: 0.8rem; color: #666;">3:</span>
+                                                                <input type="text" 
+                                                                       id="score_${matchId}_${team1}_vs_${team2}_set3"
+                                                                       placeholder="0:0"
+                                                                       value="${scores[3] || ''}"
+                                                                       style="width: 60px; padding: 6px; text-align: center; border: 2px solid #e0e0e0; border-radius: 5px;"
+                                                                       onchange="updateSetScore('${matchId}', '${team1}', '${team2}', 3, this.value)">
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                `;
+                                            }
+                                        }).join('')}
+                                        <td style="padding: 15px; text-align: center;">
+                                            <input type="number" 
+                                                   id="points_${matchId}_${team1}"
+                                                   placeholder="0"
+                                                   min="0"
+                                                   value="${match.scores?.[team1]?.points || 0}"
+                                                   style="width: 70px; padding: 8px; text-align: center; border: 2px solid #e0e0e0; border-radius: 5px; font-weight: bold; color: #1e3c72;"
+                                                   onchange="updateTeamPoints('${matchId}', '${team1}', this.value)">
+                                        </td>
+                                        <td style="padding: 15px; text-align: center; font-weight: bold; font-size: 1.2rem;" id="rank_${matchId}_${team1}">
+                                            ${match.standings?.findIndex(t => t.name === team1) + 1 || rowIndex + 1}
+                                        </td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div style="margin-top: 30px; display: flex; gap: 10px;">
+                    <button onclick="calculateClassicStandings('${matchId}')" class="btn-primary">Подсчитать места</button>
+                    <button onclick="finishClassicMatch('${matchId}')" class="btn-success">Завершить матч</button>
+                </div>
+            </div>
+        `;
+        
+        container.innerHTML = html;
+    }
 };
 
-// Удалить матч
+window.saveClassicMatchChanges = async (matchId) => {
+    const match = allMatches.find(m => m.id === matchId);
+    if (!match) return;
+    
+    try {
+        await DataManager.saveMatch(match);
+        console.log('Изменения сохранены:', match);
+        alert('✅ Изменения сохранены!');
+        
+        const index = allMatches.findIndex(m => m.id === matchId);
+        if (index !== -1) {
+            allMatches[index] = match;
+        }
+        
+        showEditMatches();
+    } catch (error) {
+        console.error('Ошибка сохранения изменений:', error);
+        alert('❌ Ошибка сохранения изменений');
+    }
+};
+
 window.deleteMatch = async (matchId) => {
     if (!confirm('Удалить этот матч?')) return;
     
@@ -1311,7 +2382,6 @@ window.deleteMatch = async (matchId) => {
         await DataManager.deleteMatch(matchId);
         alert('Матч удален');
         
-        // Обновляем список матчей
         allMatches = allMatches.filter(m => m.id !== matchId);
         showEditMatches();
         
@@ -1320,7 +2390,6 @@ window.deleteMatch = async (matchId) => {
     }
 };
 
-// Возобновить матч
 window.reopenMatch = async (matchId) => {
     const match = allMatches.find(m => m.id === matchId);
     
@@ -1338,218 +2407,49 @@ window.reopenMatch = async (matchId) => {
     }
 };
 
-// Завершить матч из редактора
-window.finishMatchFromEdit = async (matchId) => {
-    if (!confirm('Завершить матч?')) return;
-    
+window.finishMatch = async (matchId) => {
     const match = allMatches.find(m => m.id === matchId);
     
     if (match) {
-        match.status = 'completed';
-        match.completedAt = new Date().toLocaleString();
-        
-        try {
-            await DataManager.saveMatch(match);
-            alert('Матч завершен');
-            showEditMatches();
-        } catch (error) {
-            alert(`Ошибка: ${error.message}`);
+        if (match.matchType === 'points') {
+            await finishPointsMatch(matchId);
+        } else {
+            await finishClassicMatch(matchId);
         }
     }
 };
 
-// Вспомогательная функция
-function loadSavedScores(matchId) {
-    const match = allMatches.find(m => m.id === matchId);
-    if (!match || !match.scores) return;
-    
-    for (const teamA in match.scores) {
-        for (const teamB in match.scores[teamA]) {
-            const cellId = `${matchId}_${teamA}_${teamB}`;
-            const input = document.getElementById(cellId);
-            if (input) {
-                input.value = match.scores[teamA][teamB];
-            }
-        }
-    }
-}
-document.addEventListener('DOMContentLoaded', initApp);
-// =========== АДАПТИВНЫЙ ХЕДЕР С АНИМАЦИЕЙ ПРИ СКРОЛЛЕ ===========
+// =========== АДАПТИВНЫЙ ХЕДЕР ===========
 
 let lastScrollTop = 0;
 const header = document.querySelector('.header');
-const menuToggle = document.querySelector('.menu-toggle');
-const nav = document.querySelector('.header nav');
 
-// Функция для обработки скролла
 function handleScroll() {
     const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
     
-    if (scrollTop > 100) {
-        header.classList.add('compact');
-        
-        if (scrollTop > lastScrollTop && scrollTop > 200) {
-            // Скролл вниз - скрываем хедер
-            header.classList.add('hidden');
+    if (header) {
+        if (scrollTop > 100) {
+            header.classList.add('compact');
+            
+            if (scrollTop > lastScrollTop && scrollTop > 200) {
+                header.classList.add('hidden');
+            } else {
+                header.classList.remove('hidden');
+            }
         } else {
-            // Скролл вверх - показываем хедер
-            header.classList.remove('hidden');
+            header.classList.remove('compact', 'hidden');
         }
-    } else {
-        // Вверху страницы - обычный вид
-        header.classList.remove('compact', 'hidden');
     }
     
     lastScrollTop = scrollTop;
 }
 
-// Функция для переключения мобильного меню
-function toggleMobileMenu() {
-    if (menuToggle && nav) {
-        menuToggle.classList.toggle('active');
-        nav.classList.toggle('active');
-        document.body.style.overflow = nav.classList.contains('active') ? 'hidden' : '';
-    }
-}
+function closeMobileMenu() {}
 
-// Закрытие мобильного меню при клике на ссылку
-function closeMobileMenu() {
-    if (menuToggle && nav) {
-        menuToggle.classList.remove('active');
-        nav.classList.remove('active');
-        document.body.style.overflow = '';
-    }
-}
-
-// Инициализация адаптивного хедера
 function initResponsiveHeader() {
-    // Обработчик скролла
     window.addEventListener('scroll', handleScroll, { passive: true });
-    
-    // Инициализируем начальное состояние
     handleScroll();
-    
-    // Обработчик для гамбургер-меню
-    if (menuToggle) {
-        menuToggle.addEventListener('click', toggleMobileMenu);
-    }
-    
-    // Закрытие меню при клике на ссылку
-    document.querySelectorAll('.header nav a').forEach(link => {
-        link.addEventListener('click', closeMobileMenu);
-    });
-    
-    // Закрытие меню при клике вне его
-    document.addEventListener('click', function(event) {
-        if (nav && nav.classList.contains('active') && 
-            !nav.contains(event.target) && 
-            !menuToggle.contains(event.target)) {
-            closeMobileMenu();
-        }
-    });
-    
-    // Закрытие меню при изменении размера окна
-    window.addEventListener('resize', function() {
-        if (window.innerWidth > 768) {
-            closeMobileMenu();
-        }
-    });
 }
 
-// Обновите функцию initApp, чтобы вызвать инициализацию хедера
-// В существующей функции initApp добавьте вызов:
-// initResponsiveHeader();
-
-// Или замените вашу текущую функцию initApp на:
-async function initApp() {
-    console.log('Инициализация приложения...');
-    
-    // Проверяем Firebase
-    if (!DataManager.isInitialized()) {
-        console.error('Ошибка: Firebase не инициализирован');
-        return;
-    }
-    
-    try {
-        // Настраиваем слушатель аутентификации
-        setupAuthListener();
-        
-        // Инициализируем данные по умолчанию
-        await DataManager.initDefaultData();
-        
-        // Загружаем данные
-        await loadAllData();
-        
-        // Инициализируем навигацию
-        initNavigation();
-        
-        // Инициализируем адаптивный хедер
-        initResponsiveHeader();
-        
-        // Показываем домашнюю страницу
-        if (!window.location.hash || window.location.hash === '#home') {
-            showSection('home');
-        } else {
-            const sectionName = window.location.hash.substring(1);
-            if (['home', 'players', 'matches', 'auth', 'admin'].includes(sectionName)) {
-                showSection(sectionName);
-            } else {
-                showSection('home');
-            }
-        }
-        
-        console.log('Приложение инициализировано');
-    } catch (error) {
-        console.error('Ошибка инициализации:', error);
-    }
-}
-
-// Обновите функцию showSection для закрытия меню
-window.showSection = function (name) {
-    console.log('Переход на секцию:', name);
-    
-    try {
-        // Закрываем мобильное меню если открыто
-        closeMobileMenu();
-        
-        // Скрываем все секции
-        document.querySelectorAll('section').forEach(s => {
-            if (s.id.startsWith('section-')) {
-                s.style.display = 'none';
-            }
-        });
-        
-        // Показываем нужную секцию
-        const section = document.getElementById('section-' + name);
-        if (section) {
-            section.style.display = 'block';
-            // Обновляем URL
-            window.location.hash = name;
-            // Прокручиваем вверх
-            window.scrollTo(0, 0);
-        } else {
-            console.error('Секция не найдена:', 'section-' + name);
-        }
-
-        // Обработка специальных случаев
-        if (name === 'admin') {
-            const adminLoggedIn = document.getElementById('admin-logged-in');
-            const adminLoginArea = document.getElementById('admin-login-area');
-            
-            if (currentUser && isAdmin) {
-                adminLoggedIn.style.display = 'block';
-                adminLoginArea.style.display = 'none';
-                showAdminDashboard();
-            } else {
-                adminLoggedIn.style.display = 'none';
-                adminLoginArea.style.display = 'block';
-            }
-        } else if (name === 'matches') {
-            displayPastMatches();
-        } else if (name === 'players') {
-            displayAllPlayers();
-        }
-    } catch (error) {
-        console.error('Ошибка при переключении секции:', error);
-    }
-};
+// =========== ЗАПУСК ПРИЛОЖЕНИЯ ===========
+document.addEventListener('DOMContentLoaded', initApp);

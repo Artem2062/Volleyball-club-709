@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Обновление картинок и кода</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #2a5298;
+            border-bottom: 2px solid #2a5298;
+            padding-bottom: 10px;
+        }
+        
+        h2 {
+            color: #1e3c72;
+            margin-top: 0;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+        
+        .player-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .player-card {
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            background: white;
+            transition: transform 0.2s;
+        }
+        
+        .player-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .player-card img {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 3px solid #2a5298;
+        }
+        
+        button {
+            background: #2a5298;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+            transition: background 0.2s;
+        }
+        
+        button:hover {
+            background: #1e3c72;
+        }
+        
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 12px;
+            margin: 2px;
+        }
+        
+        .danger {
+            background: #dc3545;
+        }
+        
+        .danger:hover {
+            background: #c82333;
+        }
+        
+        .success {
+            background: #28a745;
+        }
+        
+        .success:hover {
+            background: #218838;
+        }
+        
+        input[type="text"], input[type="file"], select {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        textarea {
+            width: 100%;
+            height: 200px;
+            font-family: 'Courier New', monospace;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            resize: vertical;
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0;
+            align-items: center;
+        }
+        
+        .form-row input {
+            flex: 1;
+        }
+        
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            display: none;
+        }
+        
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .firebase-status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        
+        .firebase-connected {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .firebase-disconnected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin: 10px 0;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .stat-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border-left: 4px solid #2a5298;
+        }
+        
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2a5298;
+        }
+        
+        .search-box {
+            margin: 15px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        
+        .json-format {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            margin: 10px 0;
+            border: 1px solid #dee2e6;
+        }
+        
+        .toggle-button {
+            background: #6c757d;
+            font-size: 12px;
+            padding: 5px 10px;
+        }
+        
+        .hidden-content {
+            display: none;
+            margin-top: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚙️ Панель управления волейбольным клубом</h1>
+        
+        <!-- Статус Firebase -->
+        <div id="firebase-status" class="firebase-status firebase-disconnected">
+            🔄 Проверка подключения Firebase...
+        </div>
+        
+        <!-- Статус операций -->
+        <div id="status" class="status"></div>
+        
+        <!-- Статистика проекта -->
+        <div class="section" id="stats-section">
+            <h2>📊 Статистика проекта</h2>
+            <div id="project-stats" class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="players-count">0</div>
+                    <div>Игроков</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="teams-count">0</div>
+                    <div>Команд</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="matches-count">0</div>
+                    <div>Матчей</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="users-count">0</div>
+                    <div>Пользователей</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Раздел 1: Управление игроками -->
+        <div class="section">
+            <h2>👥 Управление игроками</h2>
+            
+            <!-- Поиск игроков -->
+            <div class="search-box">
+                <input type="text" id="search-player" placeholder="🔍 Поиск игроков по имени..." 
+                       onkeyup="searchPlayers()" style="width: 100%;">
+            </div>
+            
+            <!-- Список игроков -->
+            <div id="players-container">
+                <p>Загрузка игроков...</p>
+            </div>
+            
+            <!-- Управление игроками -->
+            <div class="card">
+                <h3>Добавить нового игрока</h3>
+                <div class="form-row">
+                    <input type="text" id="player-name" placeholder="Имя игрока (например: Иванов Иван)">
+                    <input type="text" id="player-photo" placeholder="URL или путь к фото (например: images/ivanov.png)">
+                    <button onclick="addNewPlayer()" class="success">Добавить</button>
+                </div>
+                <p><small>Примеры путей: images/Акаро Дмитрий.png, images/player1.jpg, https://example.com/photo.jpg</small></p>
+            </div>
+            
+            <!-- Массовое добавление -->
+            <div class="card">
+                <h3>Массовое добавление игроков</h3>
+                <p>Введите список игроков в формате: "Имя Фамилия, image.png" (по одному в строке)</p>
+                <textarea id="bulk-players" placeholder="Например:
+Иванов Иван, images/ivanov.png
+Петров Петр, images/petrov.png
+Сидоров Сидор, images/sidorov.png"></textarea>
+                <button onclick="addBulkPlayers()" class="success">Добавить всех</button>
+                <button onclick="toggleJsonFormat()" class="toggle-button">Показать JSON формат</button>
+                
+                <div id="json-format-help" class="hidden-content">
+                    <p><strong>Формат JSON для импорта:</strong></p>
+                    <div class="json-format">
+[
+  {
+    "name": "Иванов Иван",
+    "photo": "images/ivanov.png"
+  },
+  {
+    "name": "Петров Петр",
+    "photo": "images/petrov.png"
+  }
+]
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Раздел 2: Экспорт/Импорт -->
+        <div class="section">
+            <h2>📤 Экспорт / 📥 Импорт данных</h2>
+            
+            <div class="stats-grid">
+                <div class="card">
+                    <h3>Экспорт данных</h3>
+                    <p>Скачайте данные в формате JSON</p>
+                    <button onclick="exportPlayersJSON()">Экспорт игроков</button>
+                    <button onclick="exportTeamsJSON()">Экспорт команд</button>
+                    <button onclick="exportMatchesJSON()">Экспорт матчей</button>
+                    <button onclick="exportAllData()" class="success">Экспорт всего</button>
+                </div>
+                
+                <div class="card">
+                    <h3>Импорт данных</h3>
+                    <p>Загрузите данные из JSON файла</p>
+                    <input type="file" id="import-file" accept=".json" style="margin: 10px 0;">
+                    <select id="import-type" style="margin: 10px 0;">
+                        <option value="players">Игроки</option>
+                        <option value="teams">Команды</option>
+                        <option value="matches">Матчи</option>
+                        <option value="all">Все данные</option>
+                    </select>
+                    <button onclick="importData()" class="success">Импортировать</button>
+                    <p><small>Дубликаты игроков (по имени) не будут добавлены</small></p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Раздел 3: Инструменты разработчика -->
+        <div class="section">
+            <h2>🛠 Инструменты разработчика</h2>
+            
+            <div class="stats-grid">
+                <div class="card">
+                    <h3>Тестовые данные</h3>
+                    <button onclick="addDefaultPlayers()">Добавить игроков по умолчанию</button>
+                    <button onclick="addTestPlayer()">Добавить тестового игрока</button>
+                    <button onclick="clearAllPlayers()" class="danger">Очистить всех игроков</button>
+                </div>
+                
+                <div class="card">
+                    <h3>Проверка системы</h3>
+                    <button onclick="checkConnection()">Проверить подключение</button>
+                    <button onclick="testImagePaths()">Проверить пути к изображениям</button>
+                    <button onclick="showDuplicates()">Найти дубликаты</button>
+                </div>
+                
+                <div class="card">
+                    <h3>Быстрые ссылки</h3>
+                    <button onclick="window.open('index.html', '_blank')">Открыть приложение</button>
+                    <button onclick="window.open('https://github.com/your-repo', '_blank')">GitHub репозиторий</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Раздел 4: Редактор кода -->
+        <div class="section">
+            <h2>💻 Редактор кода</h2>
+            
+            <div class="stats-grid">
+                <div class="card">
+                    <h3>Файлы проекта</h3>
+                    <button onclick="loadFile('index.html')">index.html</button>
+                    <button onclick="loadFile('styles.css')">styles.css</button>
+                    <button onclick="loadFile('script.js')">script.js</button>
+                    <button onclick="loadFile('firebase-config.js')">firebase-config.js</button>
+                </div>
+                
+                <div class="card">
+                    <h3>Редактор</h3>
+                    <input type="text" id="filename" placeholder="Имя файла для сохранения">
+                    <textarea id="code-editor" placeholder="Содержимое файла..."></textarea>
+                    <button onclick="saveFile()" class="success">Сохранить файл</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Конфигурация Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyB8VVVRRAFUImUY7xNU5P1_HYmqGrK5JKSo",
+            authDomain: "volleyball-club-709.firebaseapp.com",
+            projectId: "volleyball-club-709",
+            storageBucket: "volleyball-club-709.firebasestorage.app",
+            messagingSenderId: "295552333871",
+            appId: "1:295552333871:web:3da98ba1e8a7bff48f6eda",
+            measurementId: "G-ESTC6PDVG1"
+        };
+        
+        // Глобальные переменные
+        let firebaseInitialized = false;
+        let db = null;
+        let allPlayers = [];
+        
+        // Инициализация Firebase
+        function initFirebase() {
+            try {
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(firebaseConfig);
+                }
+                
+                db = firebase.firestore();
+                firebaseInitialized = true;
+                
+                updateFirebaseStatus(true, '✅ Firebase подключен');
+                loadAllData();
+                
+            } catch (error) {
+                console.error('Ошибка инициализации Firebase:', error);
+                updateFirebaseStatus(false, `❌ Ошибка Firebase: ${error.message}`);
+            }
+        }
+        
+        // Обновление статуса Firebase
+        function updateFirebaseStatus(connected, message) {
+            const statusElement = document.getElementById('firebase-status');
+            if (statusElement) {
+                statusElement.textContent = message;
+                statusElement.className = `firebase-status ${connected ? 'firebase-connected' : 'firebase-disconnected'}`;
+            }
+        }
+        
+        // Показать статус
+        function showStatus(message, type = 'success') {
+            const status = document.getElementById('status');
+            if (status) {
+                status.textContent = message;
+                status.className = `status status-${type}`;
+                status.style.display = 'block';
+                
+                setTimeout(() => {
+                    status.style.display = 'none';
+                }, 5000);
+            }
+            console.log(`${type}: ${message}`);
+        }
+        
+        // Загрузить все данные
+        async function loadAllData() {
+            if (!firebaseInitialized) return;
+            
+            await Promise.all([
+                loadPlayers(),
+                loadStats()
+            ]);
+        }
+        
+        // Загрузить игроков
+        async function loadPlayers() {
+            if (!firebaseInitialized) return;
+            
+            try {
+                const snapshot = await db.collection('players').get();
+                allPlayers = [];
+                
+                snapshot.forEach(doc => {
+                    allPlayers.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                
+                displayPlayers(allPlayers);
+                
+            } catch (error) {
+                console.error('Ошибка загрузки игроков:', error);
+                showStatus('Ошибка загрузки игроков', 'error');
+            }
+        }
+        
+        // Отобразить игроков
+        function displayPlayers(players) {
+            const container = document.getElementById('players-container');
+            if (!container) return;
+            
+            if (players.length === 0) {
+                container.innerHTML = '<p>Нет игроков в базе данных</p>';
+                return;
+            }
+            
+            let html = `
+                <div style="margin-bottom: 15px; color: #666;">
+                    Найдено игроков: ${players.length}
+                </div>
+                <div class="player-grid">
+            `;
+            
+            players.forEach(player => {
+                const photoUrl = player.photo || 'images/default-player.png';
+                const shortId = player.id ? player.id.substring(0, 8) : 'новый';
+                
+                html += `
+                    <div class="player-card">
+                        <img src="${photoUrl}" 
+                             alt="${player.name}"
+                             onerror="this.src='images/default-player.png'">
+                        <p><strong>${player.name}</strong></p>
+                        <p style="font-size: 12px; color: #666;">ID: ${shortId}...</p>
+                        <div style="margin-top: 10px;">
+                            <button onclick="editPlayer('${player.id}')" class="btn-small">✏️</button>
+                            <button onclick="deletePlayer('${player.id}')" class="btn-small danger">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            container.innerHTML = html;
+        }
+        
+        // Поиск игроков
+        function searchPlayers() {
+            const searchTerm = document.getElementById('search-player').value.toLowerCase();
+            
+            if (!searchTerm) {
+                displayPlayers(allPlayers);
+                return;
+            }
+            
+            const filteredPlayers = allPlayers.filter(player => 
+                player.name.toLowerCase().includes(searchTerm)
+            );
+            
+            displayPlayers(filteredPlayers);
+        }
+        
+        // Добавить нового игрока
+        async function addNewPlayer() {
+            if (!firebaseInitialized) {
+                showStatus('Firebase не инициализирован', 'error');
+                return;
+            }
+            
+            const name = document.getElementById('player-name').value.trim();
+            const photo = document.getElementById('player-photo').value.trim();
+            
+            if (!name) {
+                showStatus('Введите имя игрока', 'error');
+                return;
+            }
+            
+            // Проверяем, нет ли уже игрока с таким именем
+            const existingPlayer = allPlayers.find(p => 
+                p.name.toLowerCase() === name.toLowerCase()
+            );
+            
+            if (existingPlayer) {
+                showStatus(`Игрок "${name}" уже существует!`, 'error');
+                return;
+            }
+            
+            try {
+                await db.collection('players').add({
+                    name: name,
+                    photo: photo || 'images/default-player.png',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                });
+                
+                showStatus(`Игрок "${name}" добавлен`);
+                loadAllData();
+                
+                // Очищаем поля
+                document.getElementById('player-name').value = '';
+                document.getElementById('player-photo').value = '';
+                
+            } catch (error) {
+                showStatus(`Ошибка: ${error.message}`, 'error');
+            }
+        }
+        
+        // Массовое добавление игроков
+        async function addBulkPlayers() {
+            if (!firebaseInitialized) {
+                showStatus('Firebase не инициализирован', 'error');
+                return;
+            }
+            
+            const bulkText = document.getElementById('bulk-players').value.trim();
+            if (!bulkText) {
+                showStatus('Введите список игроков', 'error');
+                return;
+            }
+            
+            const lines = bulkText.split('\n').filter(line => line.trim());
+            let added = 0;
+            let skipped = 0;
+            let errors = 0;
+            
+            showStatus(`Обработка ${lines.length} игроков...`, 'success');
+            
+            for (const line of lines) {
+                try {
+                    const [name, photo] = line.split(',').map(s => s.trim());
+                    
+                    if (!name) {
+                        errors++;
+                        continue;
+                    }
+                    
+                    // Проверяем дубликат
+                    const existingPlayer = allPlayers.find(p => 
+                        p.name.toLowerCase() === name.toLowerCase()
+                    );
+                    
+                    if (existingPlayer) {
+                        skipped++;
+                        continue;
+                    }
+                    
+                    await db.collection('players').add({
+                        name: name,
+                        photo: photo || 'images/default-player.png',
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    });
+                    
+                    added++;
+                    
+                } catch (error) {
+                    errors++;
+                    console.error('Ошибка добавления игрока:', error);
+                }
+            }
+            
+            showStatus(`Добавлено: ${added}, Пропущено (дубликаты): ${skipped}, Ошибок: ${errors}`, 'success');
+            loadAllData();
+        }
+        
+        // Удалить игрока
+        async function deletePlayer(playerId) {
+            if (!confirm('Удалить этого игрока?')) return;
+            
+            try {
+                await db.collection('players').doc(playerId).delete();
+                showStatus('Игрок удален');
+                loadAllData();
+            } catch (error) {
+                showStatus(`Ошибка удаления: ${error.message}`, 'error');
+            }
+        }
+        
+        // Редактировать игрока
+        async function editPlayer(playerId) {
+            const player = allPlayers.find(p => p.id === playerId);
+            if (!player) return;
+            
+            const newName = prompt('Введите новое имя:', player.name);
+            if (!newName || newName === player.name) return;
+            
+            const newPhoto = prompt('Введите новый URL фото:', player.photo || '');
+            
+            try {
+                const updateData = {
+                    name: newName,
+                    updatedAt: new Date().toISOString()
+                };
+                
+                if (newPhoto !== null) {
+                    updateData.photo = newPhoto;
+                }
+                
+                await db.collection('players').doc(playerId).update(updateData);
+                showStatus('Игрок обновлен');
+                loadAllData();
+            } catch (error) {
+                showStatus(`Ошибка обновления: ${error.message}`, 'error');
+            }
+        }
+        
+        // Добавить игроков по умолчанию
+        async function addDefaultPlayers() {
+            const defaultPlayers = [
+                { name: "Акаро Дмитрий", photo: "images/Акаро Дмитрий.png" },
+                { name: "Балагдин Максим", photo: "images/Балагдин Максим.png" },
+                { name: "Баринова Арина", photo: "images/Баринова Арина.png" },
+                { name: "Барачев Артём", photo: "images/Барачев Артём.png" },
+                { name: "Евгений Колесников", photo: "images/Евгений Колесников.png" },
+                { name: "Зайцев Сергей", photo: "images/Зайцев Сергей.png" },
+                { name: "Затолока Матвей", photo: "images/Затолока Матвей.png" },
+                { name: "Кабанов Макар", photo: "images/Кабанов Макар.png" },
+                { name: "Калашин Фёдор", photo: "images/Калашин Фёдор.png" },
+                { name: "Комаров Александр", photo: "images/Комаров Александр.png" }
+            ];
+            
+            let added = 0;
+            let skipped = 0;
+            
+            for (const playerData of defaultPlayers) {
+                try {
+                    // Проверяем дубликат
+                    const existingPlayer = allPlayers.find(p => 
+                        p.name.toLowerCase() === playerData.name.toLowerCase()
+                    );
+                    
+                    if (existingPlayer) {
+                        skipped++;
+                        continue;
+                    }
+                    
+                    await db.collection('players').add({
+                        ...playerData,
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    });
+                    
+                    added++;
+                    
+                } catch (error) {
+                    console.error('Ошибка добавления игрока:', error);
+                }
+            }
+            
+            showStatus(`Добавлено: ${added}, Пропущено (дубликаты): ${skipped}`, 'success');
+            loadAllData();
+        }
+        
+        // Добавить тестового игрока
+        async function addTestPlayer() {
+            await addNewPlayerWithName('Тестовый Игрок ' + Date.now().toString().slice(-4));
+        }
+        
+        async function addNewPlayerWithName(name) {
+            if (!firebaseInitialized) return;
+            
+            try {
+                await db.collection('players').add({
+                    name: name,
+                    photo: 'images/default-player.png',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                });
+                
+                showStatus(`Тестовый игрок "${name}" добавлен`);
+                loadAllData();
+            } catch (error) {
+                showStatus(`Ошибка: ${error.message}`, 'error');
+            }
+        }
+        
+        // Очистить всех игроков
+        async function clearAllPlayers() {
+            if (!confirm('ВНИМАНИЕ: Удалить ВСЕХ игроков? Это действие нельзя отменить.')) return;
+            
+            try {
+                const snapshot = await db.collection('players').get();
+                
+                if (snapshot.empty) {
+                    showStatus('Нет игроков для удаления');
+                    return;
+                }
+                
+                const batch = db.batch();
+                snapshot.forEach(doc => {
+                    batch.delete(doc.ref);
+                });
+                
+                await batch.commit();
+                showStatus(`Удалено ${snapshot.size} игроков`);
+                loadAllData();
+                
+            } catch (error) {
+                showStatus(`Ошибка: ${error.message}`, 'error');
+            }
+        }
+        
+        // Экспорт игроков в JSON
+        async function exportPlayersJSON() {
+            try {
+                const data = allPlayers.map(p => ({
+                    name: p.name,
+                    photo: p.photo || 'images/default-player.png'
+                }));
+                
+                downloadJSON(data, 'players_export.json');
+                showStatus(`Экспортировано ${data.length} игроков`);
+                
+            } catch (error) {
+                showStatus(`Ошибка экспорта: ${error.message}`, 'error');
+            }
+        }
+        
+        // Экспорт всех данных
+        async function exportAllData() {
+            try {
+                const [playersSnap, teamsSnap, matchesSnap] = await Promise.all([
+                    db.collection('players').get(),
+                    db.collection('teams').get(),
+                    db.collection('matches').get()
+                ]);
+                
+                const data = {
+                    players: playersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })),
+                    teams: teamsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })),
+                    matches: matchesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })),
+                    exportDate: new Date().toISOString(),
+                    total: {
+                        players: playersSnap.size,
+                        teams: teamsSnap.size,
+                        matches: matchesSnap.size
+                    }
+                };
+                
+                downloadJSON(data, 'volleyball_club_full_export.json');
+                showStatus(`Экспортировано полных данных`);
+                
+            } catch (error) {
+                showStatus(`Ошибка экспорта: ${error.message}`, 'error');
+            }
+        }
+        
+        // Импорт данных
+        async function importData() {
+            const fileInput = document.getElementById('import-file');
+            const importType = document.getElementById('import-type').value;
+            
+            if (!fileInput.files.length) {
+                showStatus('Выберите файл для импорта', 'error');
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            
+            reader.onload = async (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    let imported = 0;
+                    let skipped = 0;
+                    
+                    if (importType === 'players' || importType === 'all') {
+                        const players = Array.isArray(data) ? data : data.players || [];
+                        
+                        for (const player of players) {
+                            if (!player.name) continue;
+                            
+                            // Проверяем дубликат
+                            const existingPlayer = allPlayers.find(p => 
+                                p.name.toLowerCase() === player.name.toLowerCase()
+                            );
+                            
+                            if (existingPlayer) {
+                                skipped++;
+                                continue;
+                            }
+                            
+                            await db.collection('players').add({
+                                name: player.name,
+                                photo: player.photo || 'images/default-player.png',
+                                createdAt: new Date().toISOString(),
+                                updatedAt: new Date().toISOString()
+                            });
+                            
+                            imported++;
+                        }
+                    }
+                    
+                    showStatus(`Импортировано: ${imported}, Пропущено (дубликаты): ${skipped}`, 'success');
+                    loadAllData();
+                    
+                } catch (error) {
+                    showStatus(`Ошибка импорта: ${error.message}`, 'error');
+                }
+            };
+            
+            reader.readAsText(file);
+        }
+        
+        // Загрузка статистики
+        async function loadStats() {
+            if (!firebaseInitialized) return;
+            
+            try {
+                const [playersSnap, teamsSnap, matchesSnap, usersSnap] = await Promise.all([
+                    db.collection('players').get(),
+                    db.collection('teams').get(),
+                    db.collection('matches').get(),
+                    db.collection('users').get()
+                ]);
+                
+                document.getElementById('players-count').textContent = playersSnap.size;
+                document.getElementById('teams-count').textContent = teamsSnap.size;
+                document.getElementById('matches-count').textContent = matchesSnap.size;
+                document.getElementById('users-count').textContent = usersSnap.size;
+                
+            } catch (error) {
+                console.error('Ошибка загрузки статистики:', error);
+            }
+        }
+        
+        // Проверка подключения
+        async function checkConnection() {
+            try {
+                await db.collection('players').limit(1).get();
+                showStatus('✅ Подключение к Firebase работает', 'success');
+            } catch (error) {
+                showStatus('❌ Ошибка подключения', 'error');
+            }
+        }
+        
+        // Проверка путей к изображениям
+        async function testImagePaths() {
+            const testImages = allPlayers.map(p => p.photo).filter(p => p);
+            let valid = 0;
+            let invalid = 0;
+            
+            showStatus('Проверка путей к изображениям...', 'success');
+            
+            for (const imgUrl of testImages) {
+                try {
+                    const response = await fetch(imgUrl, { method: 'HEAD' });
+                    if (response.ok) {
+                        valid++;
+                    } else {
+                        invalid++;
+                    }
+                } catch {
+                    invalid++;
+                }
+            }
+            
+            showStatus(`Изображений: ${testImages.length}, Доступно: ${valid}, Недоступно: ${invalid}`, 'success');
+        }
+        
+        // Найти дубликаты
+        function showDuplicates() {
+            const duplicates = [];
+            const seen = new Set();
+            
+            allPlayers.forEach(player => {
+                const key = player.name.toLowerCase();
+                if (seen.has(key)) {
+                    duplicates.push(player.name);
+                } else {
+                    seen.add(key);
+                }
+            });
+            
+            if (duplicates.length === 0) {
+                showStatus('Дубликатов не найдено', 'success');
+            } else {
+                showStatus(`Найдены дубликаты: ${duplicates.join(', ')}`, 'error');
+            }
+        }
+        
+        // Вспомогательные функции
+        function downloadJSON(data, filename) {
+            const dataStr = JSON.stringify(data, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            link.click();
+            
+            URL.revokeObjectURL(url);
+        }
+        
+        function toggleJsonFormat() {
+            const helpDiv = document.getElementById('json-format-help');
+            helpDiv.style.display = helpDiv.style.display === 'block' ? 'none' : 'block';
+        }
+        
+        // Функции для редактора кода
+        async function loadFile(filename) {
+            try {
+                const response = await fetch(filename);
+                if (!response.ok) throw new Error('Файл не найден');
+                
+                const text = await response.text();
+                document.getElementById('code-editor').value = text;
+                document.getElementById('filename').value = filename;
+                
+                showStatus(`Файл "${filename}" загружен`);
+            } catch (error) {
+                showStatus(`Файл "${filename}" не найден`, 'error');
+            }
+        }
+        
+        async function saveFile() {
+            const filename = document.getElementById('filename').value.trim();
+            const content = document.getElementById('code-editor').value;
+            
+            if (!filename) {
+                showStatus('Введите имя файла', 'error');
+                return;
+            }
+            
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            link.click();
+            
+            URL.revokeObjectURL(url);
+            showStatus(`Файл "${filename}" сохранен`);
+        }
+        
+        // Инициализация при загрузке страницы
+        document.addEventListener('DOMContentLoaded', initFirebase);
+        
+        // Глобальные функции
+        window.addNewPlayer = addNewPlayer;
+        window.addBulkPlayers = addBulkPlayers;
+        window.addDefaultPlayers = addDefaultPlayers;
+        window.addTestPlayer = addTestPlayer;
+        window.deletePlayer = deletePlayer;
+        window.editPlayer = editPlayer;
+        window.clearAllPlayers = clearAllPlayers;
+        window.exportPlayersJSON = exportPlayersJSON;
+        window.exportAllData = exportAllData;
+        window.importData = importData;
+        window.checkConnection = checkConnection;
+        window.testImagePaths = testImagePaths;
+        window.showDuplicates = showDuplicates;
+        window.searchPlayers = searchPlayers;
+        window.toggleJsonFormat = toggleJsonFormat;
+        window.loadFile = loadFile;
+        window.saveFile = saveFile;
+    </script>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+</body>
+</html>
