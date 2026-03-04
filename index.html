@@ -7,26 +7,25 @@
 
     <!-- SEO Meta Tags -->
     <meta name="description"
-        content="Официальный сайт волейбольного клуба школы №709 г. Москвы. Новости, игроки, расписание матчей и тренировок.">
+        content="Официальный сайт волейбольного теста школы №709 г. Москвы. Руководство, тесты, звёзды и матчи, методические разработки.">
     <meta name="keywords"
-        content="волейбол, школа 709, школьный спорт, Москва, волейбольный клуб, команда, тренировки, матчи, игроки">
-    <meta name="author" content="Волейбольный клуб школы 709">
-    <meta name="robots" content="index, follow">
+        content="волейбол, школа 709, школьный спорт, Москва, волейбольный тест, команда, тренировки, матчи, игроки">
+    <meta name="author" content="Волейбольный Тест школы 709">
 
     <!-- Open Graph для социальных сетей -->
-    <meta property="og:title" content="Волейбольный клуб школы 709 | Официальный сайт">
-    <meta property="og:description" content="Официальная спортивная команда школы №709 г. Москвы">
-    <meta property="og:image" content="https://ваш-сайт.ру/images/logo.jpg">
+    <meta property="og:title" content="Волейбольный Тест 709 | Официальный сайт">
+    <meta property="og:description" content="Официальный волейбольный проект школы №709 г. Москвы">
+    <meta property="og:image" content="https://ваш-сайт.ру/images/team.png">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://ваш-сайт.ру">
-    <meta property="og:site_name" content="Волейбольный клуб школы 709">
+    <meta property="og:site_name" content="Волейбольный Тест 709">
 
     <!-- Twitter Cards -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Волейбольный клуб школы 709">
-    <meta name="twitter:description" content="Официальная спортивная команда школы №709 г. Москвы">
+    <meta name="twitter:title" content="Волейбольный Тест 709">
+    <meta name="twitter:description" content="Официальный волейбольный проект школы №709 г. Москвы">
 
-    <title>Волейбольный клуб школы 709 | Официальный сайт школьной команды</title>
+    <title>Волейбольный Тест 709 | Официальный сайт</title>
 
     <link rel="stylesheet" href="styles.css" />
     <link rel="icon" href="images/favicon.ico" type="image/x-icon">
@@ -37,8 +36,8 @@
     {
         "@context": "https://schema.org",
         "@type": "SportsTeam",
-        "name": "Волейбольный клуб школы 709",
-        "description": "Официальная спортивная команда школы №709 г. Москвы",
+        "name": "Волейбольный Тест 709",
+        "description": "Официальный волейбольный проект школы №709 г. Москвы",
         "url": "https://ваш-сайт.ру",
         "logo": "https://ваш-сайт.ру/images/logo.jpg",
         "sport": "Volleyball",
@@ -76,10 +75,15 @@
 
 <body>
     <header class="header">
+        <div class="logo">Волейбольный Тест 709</div>
         <nav style="padding: 0;">
             <a href="#home" data-section="home" onclick="showSection('home'); return false;">Главная</a>
-            <a href="#players" data-section="players" onclick="showSection('players'); return false;">Игроки</a>
-            <a href="#matches" data-section="matches" onclick="showSection('matches'); return false;">Матчи</a>
+            <a href="#management" data-section="management" onclick="showSection('management'); return false;">Руководство</a>
+            <a href="#tests" data-section="tests" onclick="showSection('tests'); return false;">Волейбольные Тесты</a>
+            <a href="#stars-matches" data-section="stars-matches" onclick="showSection('stars-matches'); return false;">Наши Звёзды и Матчи</a>
+            <a href="#methods" data-section="methods" onclick="showSection('methods'); return false;">Методические разработки</a>
+            <a href="#services" data-section="services" onclick="showSection('services'); return false;">Услуги</a>
+            <a href="#contacts" data-section="contacts" onclick="showSection('contacts'); return false;">Контакты</a>
             <span id="admin-nav" style="display:none;">
                 <a href="#admin" data-section="admin" onclick="showSection('admin'); return false;">Админка</a>
             </span>
@@ -88,34 +92,24 @@
             <span id="current-username"></span>
             <button onclick="logout()" style="margin-left:10px; padding:5px 10px;">Выйти</button>
         </div>
+        <button class="menu-toggle" id="menuToggle">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
     </header>
 
     <!-- Главная -->
     <section id="section-home" style="display: block;">
-        <!-- Герой-секция -->
+        <!-- Герой-секция (без прозрачного квадрата) -->
         <section class="hero-section">
-            <div class="hero-overlay">
-                <h1 class="hero-title">ВОЛЕЙБОЛЬНЫЙ КЛУБ <span class="school-number">709</span></h1>
-                <p class="hero-subtitle">Официальная спортивная команда школы №709 г. Москвы</p>
-
-                <!-- SEO контент для поисковых систем -->
-                <div class="seo-content" style="max-width: 800px; margin: 30px auto; color: white; text-align: center;">
-                </div>
-
-                <div class="hero-cta">
-                    <a href="#players" class="btn-hero-outline" onclick="showSection('players'); return false;">Наши
-                        игроки</a>
-                    <a href="#matches" class="btn-hero-outline"
-                        onclick="showSection('matches'); return false;">Матчи</a>
-                </div>
-            </div>
+            <!-- Фон изображения team.png -->
         </section>
 
-        <!-- О клубе -->
-        <section class="about-section">
+        <!-- Блоки "Наша миссия" и "Командный дух" под фото -->
+        <section class="about-section" style="padding-top: 40px;">
             <div class="container">
-                <h2 class="section-title">О нашем клубе</h2>
-                <div class="about-grid">
+                <div class="about-grid" style="grid-template-columns: repeat(2, 1fr);">
                     <div class="about-card">
                         <div class="about-icon">🏐</div>
                         <h3>Наша миссия</h3>
@@ -130,53 +124,16 @@
                             команды зависит от каждого участника, его преданности делу и готовности работать на общий
                             результат. Здесь каждый находит поддержку и мотивацию.</p>
                     </div>
-                    <div class="about-card">
-                        <div class="about-icon">🏆</div>
-                        <h3>Достижения</h3>
-                        <p>Неоднократные победители школьной волейбольной лиги Москвы, участники городских турниров и
-                            спортивных фестивалей. Мы гордимся каждым достижением наших спортсменов и продолжаем
-                            стремиться к новым вершинам.</p>
-                    </div>
                 </div>
             </div>
         </section>
 
-        <!-- Тренерский состав -->
-        <section class="coaches-section">
+        <!-- Руководство (Директор, Тренеры, Помощники) -->
+        <section class="management-section">
             <div class="container">
-                <h2 class="section-title">Тренерский состав</h2>
-                <div class="coaches-grid">
-                    <div class="coach-card">
-                        <div class="coach-photo">
-                            <img src="images/coach.png"
-                                alt="Базаев Владимир Александрович - главный тренер волейбольного клуба школы 709"
-                                style="width: 100%; height: 100%; object-fit: cover; object-position: top center;"
-                                onerror="this.src='images/default-player.png'">
-                        </div>
-                        <div class="coach-info">
-                            <h3>Базаев Владимир Александрович</h3>
-                            <p class="coach-role">Главный тренер</p>
-                        </div>
-                    </div>
-                    <div class="coach-card">
-                        <div class="coach-photo">
-                            <img src="images/coach2.png"
-                                alt="Вербкин Алексей Валерьевич - учитель физкультуры школы 709"
-                                style="width: 100%; height: 100%; object-fit: cover; object-position: top center;"
-                                onerror="this.src='images/default-player.png'">
-                        </div>
-                        <div class="coach-info">
-                            <h3>Вербкин Алексей Валерьевич</h3>
-                            <p class="coach-role">Учитель физкультуры</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-        <!-- Директор школы -->
-        <section class="director-section">
-            <div class="container">
-                <h2 class="section-title">Директор школы №709</h2>
+                <h2 class="section-title">Руководство</h2>
+
+                <!-- Директор -->
                 <div class="director-card">
                     <div class="director-photo">
                         <img src="images/coach3.png" alt="Дружинин Владимир Петрович - директор школы 709"
@@ -187,7 +144,6 @@
                         <h3>Дружинин Владимир Петрович</h3>
                         <p class="director-role">Директор ГБОУ «Школа №709» • Депутат Совета муниципальных депутатов
                             округа Северный</p>
-
                         <div class="director-stats-grid">
                             <div class="director-stat-item">
                                 <span class="stat-label">Дата рождения:</span>
@@ -206,55 +162,61 @@
                                 <span class="stat-value status">Депутат 4-го созыва</span>
                             </div>
                         </div>
+                    </div>
+                </div>
 
-                        <div class="director-education">
-                            <h4>Образование</h4>
-                            <p>Государственное бюджетное образовательное учреждение высшего образования города Москвы
-                                «Московский городской педагогический университет»</p>
+                <!-- Тренеры -->
+                <div class="coaches-grid" style="margin-top: 40px;">
+                    <div class="coach-card">
+                        <div class="coach-photo">
+                            <img src="images/coach.png"
+                                alt="Базаев Владимир Александрович - главный тренер"
+                                style="width: 100%; height: 100%; object-fit: cover; object-position: top center;"
+                                onerror="this.src='images/default-player.png'">
                         </div>
+                        <div class="coach-info">
+                            <h3>Базаев Владимир Александрович</h3>
+                            <p class="coach-role">Главный тренер</p>
+                        </div>
+                    </div>
+                    <div class="coach-card">
+                        <div class="coach-photo">
+                            <img src="images/coach2.png"
+                                alt="Вербкин Алексей Валерьевич - учитель физкультуры"
+                                style="width: 100%; height: 100%; object-fit: cover; object-position: top center;"
+                                onerror="this.src='images/default-player.png'">
+                        </div>
+                        <div class="coach-info">
+                            <h3>Вербкин Алексей Валерьевич</h3>
+                            <p class="coach-role">Учитель физкультуры</p>
+                        </div>
+                    </div>
+                </div>
 
-                        <div class="director-election-stats">
-                            <h4>Участие в выборах</h4>
-                            <div class="election-grid">
-                                <div class="election-stat">
-                                    <div class="stat-circle">3</div>
-                                    <span>Выдвижений</span>
-                                </div>
-                                <div class="election-stat">
-                                    <div class="stat-circle">3</div>
-                                    <span>Побед</span>
-                                </div>
-                                <div class="election-stat">
-                                    <div class="stat-circle">0</div>
-                                    <span>Поражений</span>
-                                </div>
-                                <div class="election-stat">
-                                    <div class="stat-circle">48.62%</div>
-                                    <span>Голосов</span>
-                                </div>
+                <!-- Помощники -->
+                <div class="assistants-section" style="margin-top: 40px;">
+                    <h3 style="text-align: center; color: #1e3c72; margin-bottom: 30px;">Помощники тренера</h3>
+                    <div class="coaches-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
+                        <div class="coach-card">
+                            <div class="coach-photo">
+                                <img src="images/Барычев Артём.png" 
+                                     alt="Барычев Артём - помощник тренера"
+                                     onerror="this.src='images/default-player.png'">
+                            </div>
+                            <div class="coach-info">
+                                <h3>Барычев Артём</h3>
+                                <p class="coach-role">Помощник тренера</p>
                             </div>
                         </div>
-
-                        <div class="director-bio">
-                            <h4>Биография</h4>
-                            <p>Родился 30 августа 1963 года в городе Москва. Окончил Государственное бюджетное
-                                образовательное учреждение высшего образования города Москвы «Московский городской
-                                педагогический университет».</p>
-                            <p>С 2012 года по 2017 являлся муниципальным депутатом района Северный 3-го созыва. С 2017
-                                года по настоящее время является муниципальным депутатом района Северный 4-го созыва.
-                            </p>
-                            <p>На данный момент является директором Государственного бюджетного общеобразовательного
-                                учреждения города Москвы «Школа № 709».</p>
-                        </div>
-
-                        <div class="director-awards">
-                            <h4>Награды</h4>
-                            <div class="awards-list">
-                                <span class="award-badge">🏅 Почетный работник общего образования РФ</span>
-                                <span class="award-badge">🎖 За укрепление боевого содружества</span>
-                                <span class="award-badge">🏆 В память 1000-летия Казани</span>
-                                <span class="award-badge">📚 80 лет ОСОАВИАХИМ</span>
-                                <span class="award-badge">🇷🇺 Патриот России</span>
+                        <div class="coach-card">
+                            <div class="coach-photo">
+                                <img src="images/Затолока Матвей.png" 
+                                     alt="Затолока Матвей - помощник тренера"
+                                     onerror="this.src='images/default-player.png'">
+                            </div>
+                            <div class="coach-info">
+                                <h3>Затолока Матвей</h3>
+                                <p class="coach-role">Помощник тренера</p>
                             </div>
                         </div>
                     </div>
@@ -262,69 +224,7 @@
             </div>
         </section>
 
-        <!-- Последние новости -->
-        <section class="news-section">
-            <div class="container">
-                <h2 class="section-title">Последние новости</h2>
-                <div class="news-grid">
-                    <article class="news-card">
-                        <div class="news-date">15.03.2024</div>
-                        <h3>Победа в турнире "Школьная лига"</h3>
-                        <p>Наша команда заняла первое место в окружном турнире по волейболу среди школ СВАО. В финальном
-                            матче со счетом 3:1 была одержана победа над командой школы №1534. Поздравляем игроков с
-                            блестящей победой!</p>
-                    </article>
-                    <article class="news-card">
-                        <div class="news-date">10.03.2024</div>
-                        <h3>Открыта запись в секцию</h3>
-                        <p>Объявляем набор учащихся 5-11 классов в волейбольную секцию школы 709. Тренировки проходят
-                            три раза в неделю в школьном спортзале. Для записи необходимо обратиться к тренеру или
-                            заполнить форму на сайте.</p>
-                    </article>
-                    <article class="news-card">
-                        <div class="news-date">05.03.2024</div>
-                        <h3>Мастер-класс от профессионалов</h3>
-                        <p>Приглашаем всех желающих на открытый мастер-класс от игроков профессиональной волейбольной
-                            команды "Динамо". Мероприятие пройдет 20 марта в 16:00 в спортивном зале школы.</p>
-                    </article>
-                </div>
-            </div>
-        </section>
-
-        <!-- Расписание тренировок -->
-        <section class="schedule-section">
-            <div class="container">
-                <h2 class="section-title">Расписание тренировок</h2>
-                <div class="schedule-table">
-                    <div class="schedule-row">
-                        <div class="schedule-day">Вторник</div>
-                        <div class="schedule-time">15:30 - 18:00</div>
-                        <div class="schedule-group">Младшая группа (5-7 классы)</div>
-                        <div class="schedule-location">Спортзал №1</div>
-                    </div>
-                    <div class="schedule-row">
-                        <div class="schedule-day">Вторник</div>
-                        <div class="schedule-time">18:00 - 20:00</div>
-                        <div class="schedule-group">Старшая группа (8-11 классы)</div>
-                        <div class="schedule-location">Спортзал №1</div>
-                    </div>
-                    <div class="schedule-row">
-                        <div class="schedule-day">Четверг</div>
-                        <div class="schedule-time">15:30 - 18:00</div>
-                        <div class="schedule-group">Младшая группа (5-7 классы)</div>
-                        <div class="schedule-location">Спортзал №1</div>
-                    </div>
-                    <div class="schedule-row">
-                        <div class="schedule-day">Четверг</div>
-                        <div class="schedule-time">18:00 - 20:00</div>
-                        <div class="schedule-group">Старшая группа (8-11 классы)</div>
-                        <div class="schedule-location">Спортзал №1</div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Контакты -->
+        <!-- Контакты (оставлены на главной) -->
         <section class="contacts-section">
             <div class="container">
                 <h2 class="section-title">Контакты</h2>
@@ -353,26 +253,161 @@
         </section>
     </section>
 
-    <!-- Игроки -->
-    <section id="section-players" style="display:none;">
+    <!-- Раздел "Руководство" (дублирует блок с главной для навигации) -->
+    <section id="section-management" style="display:none;">
         <div class="container">
-            <h2 class="section-title">Наши игроки</h2>
-            <p style="text-align: center; margin-bottom: 30px; color: #666;">Состав волейбольной команды школы №709 на
-                2026 год</p>
-            <div id="players-list" class="players-grid"></div>
+            <h2 class="section-title">Руководство</h2>
+            <!-- Директор -->
+            <div class="director-card">
+                <div class="director-photo">
+                    <img src="images/coach3.png" alt="Дружинин Владимир Петрович - директор школы 709"
+                        style="width: 100%; height: 100%; object-fit: cover; object-position: top center;"
+                        onerror="this.src='images/default-player.png'">
+                </div>
+                <div class="director-info">
+                    <h3>Дружинин Владимир Петрович</h3>
+                    <p class="director-role">Директор ГБОУ «Школа №709» • Депутат Совета муниципальных депутатов
+                        округа Северный</p>
+                    <div class="director-stats-grid">
+                        <div class="director-stat-item">
+                            <span class="stat-label">Дата рождения:</span>
+                            <span class="stat-value">30.08.1963</span>
+                        </div>
+                        <div class="director-stat-item">
+                            <span class="stat-label">Место проживания:</span>
+                            <span class="stat-value">Москва, район Северный</span>
+                        </div>
+                        <div class="director-stat-item">
+                            <span class="stat-label">Партия:</span>
+                            <span class="stat-value party">Единая Россия</span>
+                        </div>
+                        <div class="director-stat-item">
+                            <span class="stat-label">Статус:</span>
+                            <span class="stat-value status">Депутат 4-го созыва</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Тренеры -->
+            <div class="coaches-grid" style="margin-top: 40px;">
+                <div class="coach-card">
+                    <div class="coach-photo">
+                        <img src="images/coach.png"
+                            alt="Базаев Владимир Александрович - главный тренер"
+                            style="width: 100%; height: 100%; object-fit: cover; object-position: top center;"
+                            onerror="this.src='images/default-player.png'">
+                    </div>
+                    <div class="coach-info">
+                        <h3>Базаев Владимир Александрович</h3>
+                        <p class="coach-role">Главный тренер</p>
+                    </div>
+                </div>
+                <div class="coach-card">
+                    <div class="coach-photo">
+                        <img src="images/coach2.png"
+                            alt="Вербкин Алексей Валерьевич - учитель физкультуры"
+                            style="width: 100%; height: 100%; object-fit: cover; object-position: top center;"
+                            onerror="this.src='images/default-player.png'">
+                    </div>
+                    <div class="coach-info">
+                        <h3>Вербкин Алексей Валерьевич</h3>
+                        <p class="coach-role">Учитель физкультуры</p>
+                    </div>
+                </div>
+            </div>
+            <!-- Помощники -->
+            <div class="assistants-section" style="margin-top: 40px;">
+                <h3 style="text-align: center; color: #1e3c72; margin-bottom: 30px;">Помощники тренера</h3>
+                <div class="coaches-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
+                    <div class="coach-card">
+                        <div class="coach-photo">
+                            <img src="images/Барычев Артём.png" 
+                                 alt="Барычев Артём - помощник тренера"
+                                 onerror="this.src='images/default-player.png'">
+                        </div>
+                        <div class="coach-info">
+                            <h3>Барычев Артём</h3>
+                            <p class="coach-role">Помощник тренера</p>
+                        </div>
+                    </div>
+                    <div class="coach-card">
+                        <div class="coach-photo">
+                            <img src="images/Затолока Матвей.png" 
+                                 alt="Затолока Матвей - помощник тренера"
+                                 onerror="this.src='images/default-player.png'">
+                        </div>
+                        <div class="coach-info">
+                            <h3>Затолока Матвей</h3>
+                            <p class="coach-role">Помощник тренера</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </section>
 
-    <!-- Матчи -->
-    <section id="section-matches" style="display:none;">
+    <!-- Волейбольные Тесты (заглушка) -->
+    <section id="section-tests" style="display:none;">
         <div class="container">
-            <h2 class="section-title">Волейбольные тесты</h2>
-            
-            <div id="matches-list"></div>
+            <h2 class="section-title">Волейбольные Тесты</h2>
+            <p style="text-align: center; padding: 50px; background: #f8f9fa; border-radius: 10px; color: #666;">Раздел "Волейбольные Тесты" находится в разработке. Скоро здесь появятся интересные материалы.</p>
         </div>
     </section>
 
-    <!-- Вход/регистрация -->
+    <!-- Наши Звёзды и Матчи (бывший раздел "Матчи") -->
+    <section id="section-stars-matches" style="display:none;">
+        <div class="container">
+            <h2 class="section-title">Наши Звёзды и Матчи</h2>
+            <p style="text-align: center; margin-bottom: 30px; color: #666;">Результаты прошедших игр и достижения наших игроков</p>
+            <div id="stars-matches-list"></div>
+        </div>
+    </section>
+
+    <!-- Методические разработки (заглушка) -->
+    <section id="section-methods" style="display:none;">
+        <div class="container">
+            <h2 class="section-title">Методические разработки</h2>
+            <p style="text-align: center; padding: 50px; background: #f8f9fa; border-radius: 10px; color: #666;">Раздел "Методические разработки" находится в разработке. Здесь будут опубликованы полезные материалы для тренировок.</p>
+        </div>
+    </section>
+
+    <!-- Услуги (заглушка) -->
+    <section id="section-services" style="display:none;">
+        <div class="container">
+            <h2 class="section-title">Услуги</h2>
+            <p style="text-align: center; padding: 50px; background: #f8f9fa; border-radius: 10px; color: #666;">Раздел "Услуги" находится в разработке. Информация о тренировках, мастер-классах и аренде зала появится здесь позже.</p>
+        </div>
+    </section>
+
+    <!-- Контакты (отдельный раздел) -->
+    <section id="section-contacts" style="display:none;">
+        <div class="container">
+            <h2 class="section-title">Контакты</h2>
+            <div class="contacts-grid">
+                <div class="contact-info">
+                    <h3>Школа №709</h3>
+                    <p><strong>Адрес:</strong> 127204, г. Москва, 9-я Северная л., д. 1, корп. 2</p>
+                    <p><strong>Телефон:</strong> +7 (495) 123-51-18</p>
+                    <p><strong>Email:</strong> DruzhininVP1@edu.mos.ru</p>
+                    <p><strong>Тренер:</strong> Базаев Владимир Александрович</p>
+                </div>
+                <div class="map-placeholder">
+                    <div class="map-image">
+                        <div onclick="window.open('https://sch709sv.mskobr.ru/', '_blank')"
+                            style="background: #1e3c72; color: white; height: auto; display: flex; align-items: center; justify-content: center; border-radius: 8px; flex-direction: column; cursor: pointer; transition: transform 0.3s ease, background 0.3s ease;"
+                            onmouseover="this.style.transform='scale(1.02)'"
+                            onmouseout="this.style.transform='scale(1)'">
+                            <p style="margin: 0; font-size: 1.6rem; font-weight: bold;">Перейти на сайт школы №709
+                            </p>
+                            <p style="margin: 10px 0 0 0; font-size: 0.9rem; opacity: 0.9;">sch709sv.mskobr.ru</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Вход/регистрация (без изменений) -->
     <section id="section-auth" style="display:none;">
         <div class="container">
             <h2 class="section-title">Вход / Регистрация</h2>
@@ -394,7 +429,7 @@
         </div>
     </section>
 
-    <!-- Админка -->
+    <!-- Админка (без изменений) -->
     <section id="section-admin" style="display:none;">
         <div class="container">
             <h2 class="section-title">Администрирование</h2>
@@ -418,16 +453,20 @@
     <!-- Футер -->
     <footer class="footer">
         <div class="footer-content">
-            <div class="logo">Волейбольный клуб школы 709</div>
+            <div class="logo">Волейбольный Тест 709</div>
             <div class="footer-links">
                 <a href="#home" onclick="showSection('home'); return false;">Главная</a>
-                <a href="#players" onclick="showSection('players'); return false;">Игроки</a>
-                <a href="#matches" onclick="showSection('matches'); return false;">Матчи</a>
+                <a href="#management" onclick="showSection('management'); return false;">Руководство</a>
+                <a href="#tests" onclick="showSection('tests'); return false;">Тесты</a>
+                <a href="#stars-matches" onclick="showSection('stars-matches'); return false;">Звёзды и Матчи</a>
+                <a href="#methods" onclick="showSection('methods'); return false;">Методички</a>
+                <a href="#services" onclick="showSection('services'); return false;">Услуги</a>
+                <a href="#contacts" onclick="showSection('contacts'); return false;">Контакты</a>
                 <a href="#auth" onclick="showSection('auth'); return false;">Вход</a>
                 <a href="#admin" data-section="admin" onclick="showSection('admin'); return false;">Администраторам</a>
             </div>
             <div class="copyright">
-                © 2026 Волейбольный клуб школы 709 Москва. Все права защищены.
+                © 2026 Волейбольный Тест 709 Москва. Все права защищены.
             </div>
         </div>
     </footer>
@@ -457,3 +496,4 @@
 </body>
 
 </html>
+

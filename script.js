@@ -328,7 +328,8 @@ async function initApp() {
             showSection('home');
         } else {
             const sectionName = window.location.hash.substring(1);
-            if (['home', 'players', 'matches', 'auth', 'admin'].includes(sectionName)) {
+            // Обновленный список разделов
+            if (['home', 'management', 'tests', 'stars-matches', 'methods', 'services', 'contacts', 'auth', 'admin'].includes(sectionName)) {
                 showSection(sectionName);
             } else {
                 showSection('home');
@@ -423,10 +424,8 @@ window.showSection = function (name) {
                 adminLoggedIn.style.display = 'none';
                 adminLoginArea.style.display = 'block';
             }
-        } else if (name === 'matches') {
-            displayPastMatches();
-        } else if (name === 'players') {
-            displayAllPlayers();
+        } else if (name === 'stars-matches') { // Изменено с 'matches' на 'stars-matches'
+            displayStarsMatches(); // Вызываем функцию для отображения матчей
         }
     } catch (error) {
         console.error('Ошибка при переключении секции:', error);
@@ -607,10 +606,10 @@ async function displayAllPlayers() {
     }
 }
 
-// =========== ОТОБРАЖЕНИЕ МАТЧЕЙ ===========
+// =========== ОТОБРАЖЕНИЕ МАТЧЕЙ (НОВОЕ НАЗВАНИЕ) ===========
 
-async function displayPastMatches() {
-    const container = document.getElementById('matches-list');
+async function displayStarsMatches() {
+    const container = document.getElementById('stars-matches-list'); // ID изменен
     if (!container) return;
     
     try {
@@ -2423,6 +2422,7 @@ window.finishMatch = async (matchId) => {
 
 let lastScrollTop = 0;
 const header = document.querySelector('.header');
+const menuToggle = document.getElementById('menuToggle');
 
 function handleScroll() {
     const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
@@ -2444,11 +2444,27 @@ function handleScroll() {
     lastScrollTop = scrollTop;
 }
 
-function closeMobileMenu() {}
+function closeMobileMenu() {
+    if (menuToggle && menuToggle.classList.contains('active')) {
+        menuToggle.classList.remove('active');
+        document.querySelector('.header nav').classList.remove('active');
+    }
+}
 
 function initResponsiveHeader() {
     window.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll();
+    
+    if (menuToggle) {
+        menuToggle.addEventListener('click', function() {
+            this.classList.toggle('active');
+            document.querySelector('.header nav').classList.toggle('active');
+        });
+    }
+    
+    document.querySelectorAll('.header nav a').forEach(link => {
+        link.addEventListener('click', closeMobileMenu);
+    });
 }
 
 // =========== ЗАПУСК ПРИЛОЖЕНИЯ ===========
